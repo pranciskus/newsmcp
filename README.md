@@ -1,7 +1,4 @@
-<p align="center">
-  <strong>newsmcp</strong><br>
-  World news for AI agents
-</p>
+<h1 align="center">NEWSMCP — World news for AI agents</h1>
 
 <p align="center">
   <a href="https://newsmcp.io">newsmcp.io</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#integrations">integrations</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#rest-api">REST API</a>
@@ -18,6 +15,14 @@
 Real-time news events, clustered by AI from hundreds of sources, classified by topic and geography, ranked by importance.
 
 Free. No API key. One command to install.
+
+## Coverage
+
+**12 topics** — `politics` `economy` `technology` `science` `health` `environment` `sports` `culture` `crime` `military` `education` `society`
+
+**50+ regions** — Every continent and major countries. Filter by `europe`, `asia`, `united states`, `germany`, `brazil`, and many more.
+
+**Hundreds of sources** — Articles clustered into events in real-time, ranked by source count and impact score.
 
 ## Integrations
 
