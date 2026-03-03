@@ -10,8 +10,8 @@ import {
 
 export function createServer(): McpServer {
   const server = new McpServer({
-    name: "newsmcp.io",
-    version: "1.0.0",
+    name: "newsmcp",
+    version: "1.0.1",
   });
 
   server.tool(
