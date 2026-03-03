@@ -20,7 +20,7 @@ Free. No API key. One command to install.
 
 **12 topics** — `politics` `economy` `technology` `science` `health` `environment` `sports` `culture` `crime` `military` `education` `society`
 
-**50+ regions** — Every continent and major countries. Filter by `europe`, `asia`, `united states`, `germany`, `brazil`, and many more.
+**30 regions** — 6 continents and 24 countries. Filter by `europe`, `asia`, `united-states`, `germany`, `japan`, `ukraine`, and more.
 
 **Hundreds of sources** — Articles clustered into events in real-time, ranked by source count and impact score.
 
@@ -153,7 +153,7 @@ Lists every topic category available for filtering. No parameters.
 
 ### `get_regions`
 
-Lists every geographic region — continents and countries — available for filtering. No parameters. 100+ regions.
+Lists every geographic region — 6 continents and 24 countries — available for filtering. No parameters.
 
 ## How agents use it
 
