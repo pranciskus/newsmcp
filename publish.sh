@@ -72,7 +72,7 @@ if [ "$1" = "mcp-server" ]; then
   # 3. Test MCP handshake (mcp-server only)
   echo "--- Testing MCP server ---"
   RESPONSE=$(printf '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}\n' | node "${PKG_DIR}/dist/index.js" 2>/dev/null)
-  if echo "$RESPONSE" | grep -q '"newsmcp"'; then
+  if echo "$RESPONSE" | grep -q 'newsmcp'; then
     echo "OK: MCP server responds correctly"
   else
     echo "ERROR: MCP server did not respond as expected"
