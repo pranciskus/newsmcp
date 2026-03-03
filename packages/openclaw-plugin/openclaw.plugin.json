@@ -1,0 +1,22 @@
+{
+  "id": "newsmcp-openclaw",
+  "name": "World News",
+  "description": "Real-time AI-clustered world news events with topic and geographic filtering from newsmcp.io. Free, no API key.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [],
+    "properties": {
+      "apiBaseUrl": {
+        "type": "string",
+        "description": "News API base URL (default: https://newsmcp.io/v1)"
+      }
+    }
+  },
+  "uiHints": {
+    "apiBaseUrl": {
+      "label": "API Base URL",
+      "placeholder": "https://newsmcp.io/v1"
+    }
+  }
+}

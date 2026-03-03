@@ -8,7 +8,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@newsmcp/server"><img src="https://img.shields.io/npm/v/@newsmcp/server?style=flat-square&color=cb3837" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/@newsmcp/server"><img src="https://img.shields.io/npm/v/@newsmcp/server?style=flat-square&color=cb3837" alt="npm @newsmcp/server"></a>
+  <a href="https://www.npmjs.com/package/@newsmcp/openclaw"><img src="https://img.shields.io/npm/v/@newsmcp/openclaw?style=flat-square&color=cb3837" alt="npm @newsmcp/openclaw"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT"></a>
 </p>
 
@@ -79,6 +80,12 @@ Add to MCP config:
 
 ```bash
 npx -y @smithery/cli install @newsmcp/server --client claude
+```
+
+### OpenClaw
+
+```bash
+openclaw plugins install @newsmcp/openclaw
 ```
 
 ## MCP Tools
@@ -226,8 +233,9 @@ Point to a different API backend:
 ```
 newsmcp/
 ├── packages/
-│   └── mcp-server/     # @newsmcp/server — the MCP server (npm)
-├── publish.sh           # Build, test, publish workflow
+│   ├── mcp-server/       # @newsmcp/server — MCP server (npm)
+│   └── openclaw-plugin/  # @newsmcp/openclaw — OpenClaw plugin (npm)
+├── publish.sh             # Build, test, publish workflow
 ├── README.md
 └── LICENSE
 ```

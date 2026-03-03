@@ -3,10 +3,36 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-PKG_DIR="packages/mcp-server"
+# --- Package selection ---
+usage() {
+  echo "Usage: $0 <mcp-server|openclaw-plugin>"
+  echo ""
+  echo "Packages:"
+  echo "  mcp-server       Publish @newsmcp/server (MCP server)"
+  echo "  openclaw-plugin   Publish @newsmcp/openclaw (OpenClaw plugin)"
+  exit 1
+}
+
+if [ $# -lt 1 ]; then
+  usage
+fi
+
+case "$1" in
+  mcp-server)
+    PKG_DIR="packages/mcp-server"
+    ;;
+  openclaw-plugin)
+    PKG_DIR="packages/openclaw-plugin"
+    ;;
+  *)
+    echo "ERROR: Unknown package '$1'"
+    usage
+    ;;
+esac
+
 VERSION=$(node -p "require('./${PKG_DIR}/package.json').version")
 NAME=$(node -p "require('./${PKG_DIR}/package.json').name")
-TAG="v${VERSION}"
+TAG="${NAME}@${VERSION}"
 
 echo "=== Publishing ${NAME}@${VERSION} ==="
 echo ""
@@ -35,24 +61,31 @@ fi
 echo "OK: git clean, tag ${TAG} available"
 echo ""
 
-# 2. Build
-echo "--- Building ---"
-rm -rf "${PKG_DIR}/dist"
-npm run build
-echo "OK: Build complete"
-echo ""
+# 2. Build (mcp-server only — openclaw-plugin uses noEmit)
+if [ "$1" = "mcp-server" ]; then
+  echo "--- Building ---"
+  rm -rf "${PKG_DIR}/dist"
+  npm run build
+  echo "OK: Build complete"
+  echo ""
 
-# 3. Test MCP handshake
-echo "--- Testing MCP server ---"
-RESPONSE=$(printf '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}\n' | node "${PKG_DIR}/dist/index.js" 2>/dev/null)
-if echo "$RESPONSE" | grep -q '"newsmcp"'; then
-  echo "OK: MCP server responds correctly"
+  # 3. Test MCP handshake (mcp-server only)
+  echo "--- Testing MCP server ---"
+  RESPONSE=$(printf '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}\n' | node "${PKG_DIR}/dist/index.js" 2>/dev/null)
+  if echo "$RESPONSE" | grep -q '"newsmcp"'; then
+    echo "OK: MCP server responds correctly"
+  else
+    echo "ERROR: MCP server did not respond as expected"
+    echo "$RESPONSE"
+    exit 1
+  fi
+  echo ""
 else
-  echo "ERROR: MCP server did not respond as expected"
-  echo "$RESPONSE"
-  exit 1
+  echo "--- Type-checking ---"
+  (cd "${PKG_DIR}" && npx tsc --noEmit)
+  echo "OK: Type-check passed"
+  echo ""
 fi
-echo ""
 
 # 4. npm publish
 echo "--- Publishing to npm ---"
@@ -62,7 +95,7 @@ echo ""
 
 # 5. Git tag + push
 echo "--- Tagging ${TAG} ---"
-git tag -a "$TAG" -m "Release ${VERSION}"
+git tag -a "$TAG" -m "Release ${NAME}@${VERSION}"
 git push origin "$TAG"
 echo "OK: Tag ${TAG} pushed"
 echo ""
@@ -72,21 +105,26 @@ echo "--- Creating GitHub release ---"
 gh release create "$TAG" \
   --title "${TAG}" \
   --notes "$(cat <<EOF
-## ${VERSION}
+## ${NAME}@${VERSION}
 
 World news for AI agents. Free, no API key.
 
 ### Install
 
 \`\`\`bash
-# Claude Desktop / Cursor
-npx -y ${NAME}
-
-# Claude Code
-claude mcp add newsmcp -- npx -y ${NAME}
-
-# Smithery
-npx -y @smithery/cli install ${NAME} --client claude
+$(if [ "$1" = "mcp-server" ]; then
+  echo "# Claude Desktop / Cursor"
+  echo "npx -y ${NAME}"
+  echo ""
+  echo "# Claude Code"
+  echo "claude mcp add newsmcp -- npx -y ${NAME}"
+  echo ""
+  echo "# Smithery"
+  echo "npx -y @smithery/cli install ${NAME} --client claude"
+else
+  echo "# OpenClaw"
+  echo "openclaw plugins install ${NAME}"
+fi)
 \`\`\`
 
 ### Tools
@@ -101,17 +139,21 @@ EOF
 echo "OK: GitHub release created"
 echo ""
 
-# 7. Smithery publish
-echo "--- Publishing to Smithery ---"
-if (cd "${PKG_DIR}" && npx -y @smithery/cli@latest publish) 2>&1; then
-  echo "OK: Published to Smithery"
-else
-  echo "WARN: Smithery publish failed (you may need to authenticate first)"
-  echo "  Run: npx @smithery/cli@latest auth"
+# 7. Smithery publish (mcp-server only)
+if [ "$1" = "mcp-server" ]; then
+  echo "--- Publishing to Smithery ---"
+  if (cd "${PKG_DIR}" && npx -y @smithery/cli@latest publish) 2>&1; then
+    echo "OK: Published to Smithery"
+  else
+    echo "WARN: Smithery publish failed (you may need to authenticate first)"
+    echo "  Run: npx @smithery/cli@latest auth"
+  fi
+  echo ""
 fi
-echo ""
 
 echo "=== Done ==="
 echo "  npm: https://www.npmjs.com/package/${NAME}"
 echo "  GitHub: https://github.com/pranciskus/newsmcp/releases/tag/${TAG}"
-echo "  Smithery: https://smithery.ai/server/${NAME}"
+if [ "$1" = "mcp-server" ]; then
+  echo "  Smithery: https://smithery.ai/server/${NAME}"
+fi
