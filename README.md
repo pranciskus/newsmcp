@@ -29,7 +29,7 @@ Free. No API key. One command to install.
 | [Windsurf](#windsurf) | `@newsmcp/server` | MCP config |
 | [Smithery](#smithery) | `@newsmcp/server` | `npx @smithery/cli` |
 | [OpenClaw plugin](#openclaw-plugin) | `@newsmcp/openclaw` | `openclaw plugins install` |
-| [OpenClaw skill](#openclaw-skill) | `world-news` | `openclaw skills install` |
+| [OpenClaw skill](#openclaw-skill) | `newsmcp` | `openclaw skills install` |
 | [REST API](#rest-api) | — | `curl https://newsmcp.io/v1/news/` |
 
 ### Claude Desktop
@@ -100,7 +100,7 @@ No configuration needed — works out of the box. See [`@newsmcp/openclaw`](pack
 ### OpenClaw Skill
 
 ```bash
-openclaw skills install world-news
+openclaw skills install newsmcp
 ```
 
 Lightweight alternative — a single SKILL.md that teaches the agent to call the REST API via `curl`. No dependencies. See [`world-news`](packages/skill/) on [ClawHub](https://clawhub.ai/).
