@@ -8,7 +8,7 @@ export function registerGetNewsDetail(api: PluginApi, client: NewsApiClient) {
   api.registerTool({
     name: "newsmcp_get_news_detail",
     description:
-      "Get full details for a single news event — all source articles, AI-generated context, impact analysis. Use event IDs from newsmcp_get_news results.",
+      "Get full details for a single news event — all source articles, AI-generated context, impact analysis. Use event IDs from newsmcp_get_news results. Always include source article URLs in your response so the user can read the original reporting.",
     parameters: {
       type: "object" as const,
       properties: {

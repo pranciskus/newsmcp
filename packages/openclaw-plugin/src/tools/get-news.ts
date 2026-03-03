@@ -19,7 +19,7 @@ export function registerGetNews(api: PluginApi, client: NewsApiClient) {
   api.registerTool({
     name: "newsmcp_get_news",
     description:
-      "Get top news events happening right now. Filter by topic, geographic region, and time window. Returns AI-clustered events ranked by source coverage.",
+      "Get top news events happening right now. Filter by topic, geographic region, and time window. Returns AI-clustered events ranked by source coverage. When presenting results, always include 1-2 source article URLs per event so the user can read more.",
     parameters: {
       type: "object" as const,
       properties: {

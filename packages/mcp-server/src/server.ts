@@ -16,7 +16,7 @@ export function createServer(): McpServer {
 
   server.tool(
     "get_news",
-    "Get top news events happening in the world right now. Returns AI-clustered news stories with importance ranking. Filter by topic, region, and time window.",
+    "Get top news events happening in the world right now. Returns AI-clustered news stories with importance ranking. Filter by topic, region, and time window. When presenting results, always include 1-2 source article URLs per event so the user can read more.",
     getNewsSchema,
     async (args) => {
       try {
@@ -33,7 +33,7 @@ export function createServer(): McpServer {
 
   server.tool(
     "get_news_detail",
-    "Get full details about a specific news event including context and all source articles. Use an event ID from get_news results.",
+    "Get full details about a specific news event including context and all source articles. Use an event ID from get_news results. Always include source article URLs in your response so the user can read the original reporting.",
     getNewsDetailSchema,
     async (args) => {
       try {
