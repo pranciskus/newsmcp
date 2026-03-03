@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <a href="https://newsmcp.io">newsmcp.io</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="https://www.npmjs.com/package/@newsmcp/server">npm</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#install">install</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#rest-api">REST API</a>
+  <a href="https://newsmcp.io">newsmcp.io</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#integrations">integrations</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#rest-api">REST API</a>
 </p>
 
 <p align="center">
@@ -19,11 +19,17 @@ Real-time news events, clustered by AI from hundreds of sources, classified by t
 
 Free. No API key. One command to install.
 
-```
-npx -y @newsmcp/server
-```
+## Integrations
 
-## Install
+| Platform | Package | Install |
+|----------|---------|---------|
+| [Claude Desktop](#claude-desktop) | `@newsmcp/server` | MCP config |
+| [Claude Code](#claude-code) | `@newsmcp/server` | `claude mcp add` |
+| [Cursor](#cursor) | `@newsmcp/server` | MCP config |
+| [Windsurf](#windsurf) | `@newsmcp/server` | MCP config |
+| [Smithery](#smithery) | `@newsmcp/server` | `npx @smithery/cli` |
+| [OpenClaw](#openclaw) | `@newsmcp/openclaw` | `openclaw plugins install` |
+| [REST API](#rest-api) | — | `curl https://newsmcp.io/v1/news/` |
 
 ### Claude Desktop
 
@@ -87,6 +93,8 @@ npx -y @smithery/cli install @newsmcp/server --client claude
 ```bash
 openclaw plugins install @newsmcp/openclaw
 ```
+
+No configuration needed — works out of the box. See [`@newsmcp/openclaw`](packages/openclaw-plugin/) for options.
 
 ## MCP Tools
 
