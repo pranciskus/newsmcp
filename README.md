@@ -28,7 +28,8 @@ Free. No API key. One command to install.
 | [Cursor](#cursor) | `@newsmcp/server` | MCP config |
 | [Windsurf](#windsurf) | `@newsmcp/server` | MCP config |
 | [Smithery](#smithery) | `@newsmcp/server` | `npx @smithery/cli` |
-| [OpenClaw](#openclaw) | `@newsmcp/openclaw` | `openclaw plugins install` |
+| [OpenClaw plugin](#openclaw-plugin) | `@newsmcp/openclaw` | `openclaw plugins install` |
+| [OpenClaw skill](#openclaw-skill) | `world-news` | `openclaw skills install` |
 | [REST API](#rest-api) | — | `curl https://newsmcp.io/v1/news/` |
 
 ### Claude Desktop
@@ -88,13 +89,21 @@ Add to MCP config:
 npx -y @smithery/cli install @newsmcp/server --client claude
 ```
 
-### OpenClaw
+### OpenClaw Plugin
 
 ```bash
 openclaw plugins install @newsmcp/openclaw
 ```
 
 No configuration needed — works out of the box. See [`@newsmcp/openclaw`](packages/openclaw-plugin/) for options.
+
+### OpenClaw Skill
+
+```bash
+openclaw skills install world-news
+```
+
+Lightweight alternative — a single SKILL.md that teaches the agent to call the REST API via `curl`. No dependencies. See [`world-news`](packages/skill/) on [ClawHub](https://clawhub.ai/).
 
 ## MCP Tools
 
@@ -242,7 +251,8 @@ Point to a different API backend:
 newsmcp/
 ├── packages/
 │   ├── mcp-server/       # @newsmcp/server — MCP server (npm)
-│   └── openclaw-plugin/  # @newsmcp/openclaw — OpenClaw plugin (npm)
+│   ├── openclaw-plugin/  # @newsmcp/openclaw — OpenClaw plugin (npm)
+│   └── skill/            # world-news — OpenClaw skill (ClawHub)
 ├── publish.sh             # Build, test, publish workflow
 ├── README.md
 └── LICENSE
