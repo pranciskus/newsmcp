@@ -1,0 +1,13 @@
+{
+  "name": "newsmcp",
+  "version": "1.0.0",
+  "description": "Real-time world news for AI agents. AI-clustered events with topic and geographic filtering. Free, no API key.",
+  "author": {
+    "name": "pranciskus",
+    "url": "https://github.com/pranciskus"
+  },
+  "repository": "https://github.com/pranciskus/newsmcp",
+  "homepage": "https://newsmcp.io",
+  "license": "MIT",
+  "keywords": ["news", "world-news", "mcp", "newsmcp", "ai-agents"]
+}

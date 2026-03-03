@@ -24,12 +24,13 @@ Free. No API key. One command to install.
 | Platform | Package | Install |
 |----------|---------|---------|
 | [Claude Desktop](#claude-desktop) | `@newsmcp/server` | MCP config |
-| [Claude Code](#claude-code) | `@newsmcp/server` | `claude mcp add` |
+| [Claude Code plugin](#claude-code-plugin) | `newsmcp` | `/plugin install` |
+| [Claude Code MCP](#claude-code-mcp) | `@newsmcp/server` | `claude mcp add` |
 | [Cursor](#cursor) | `@newsmcp/server` | MCP config |
 | [Windsurf](#windsurf) | `@newsmcp/server` | MCP config |
 | [Smithery](#smithery) | `@newsmcp/server` | `npx @smithery/cli` |
 | [OpenClaw plugin](#openclaw-plugin) | `@newsmcp/openclaw` | `openclaw plugins install` |
-| [OpenClaw skill](#openclaw-skill) | `newsmcp` | `openclaw skills install` |
+| [OpenClaw skill](#openclaw-skill) | `newsmcp-skill` | `clawhub install` |
 | [REST API](#rest-api) | — | `curl https://newsmcp.io/v1/news/` |
 
 ### Claude Desktop
@@ -47,7 +48,14 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-### Claude Code
+### Claude Code Plugin
+
+```bash
+/plugin marketplace add pranciskus/newsmcp
+/plugin install newsmcp
+```
+
+### Claude Code MCP
 
 ```bash
 claude mcp add newsmcp -- npx -y @newsmcp/server
@@ -100,10 +108,10 @@ No configuration needed — works out of the box. See [`@newsmcp/openclaw`](pack
 ### OpenClaw Skill
 
 ```bash
-openclaw skills install newsmcp
+clawhub install newsmcp-skill
 ```
 
-Lightweight alternative — a single SKILL.md that teaches the agent to call the REST API via `curl`. No dependencies. See [`world-news`](packages/skill/) on [ClawHub](https://clawhub.ai/).
+Lightweight alternative — a single SKILL.md that teaches the agent to call the REST API via `curl`. No dependencies. See [`newsmcp-skill`](packages/skill/) on [ClawHub](https://clawhub.ai/).
 
 ## MCP Tools
 
@@ -249,11 +257,13 @@ Point to a different API backend:
 
 ```
 newsmcp/
+├── .claude-plugin/          # Marketplace manifest
 ├── packages/
-│   ├── mcp-server/       # @newsmcp/server — MCP server (npm)
-│   ├── openclaw-plugin/  # @newsmcp/openclaw — OpenClaw plugin (npm)
-│   └── skill/            # world-news — OpenClaw skill (ClawHub)
-├── publish.sh             # Build, test, publish workflow
+│   ├── mcp-server/          # @newsmcp/server — MCP server (npm)
+│   ├── claude-code-plugin/  # newsmcp — Claude Code plugin
+│   ├── openclaw-plugin/     # @newsmcp/openclaw — OpenClaw plugin (npm)
+│   └── skill/               # newsmcp-skill — OpenClaw skill (ClawHub)
+├── publish.sh                # Build, test, publish workflow
 ├── README.md
 └── LICENSE
 ```

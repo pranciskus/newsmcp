@@ -1,0 +1,21 @@
+{
+  "name": "newsmcp",
+  "owner": {
+    "name": "pranciskus",
+    "url": "https://github.com/pranciskus"
+  },
+  "metadata": {
+    "description": "World news for AI agents",
+    "pluginRoot": "./packages"
+  },
+  "plugins": [
+    {
+      "name": "newsmcp",
+      "source": "./packages/claude-code-plugin",
+      "description": "Real-time world news for AI agents. AI-clustered events with topic and geographic filtering. Free, no API key.",
+      "version": "1.0.0",
+      "category": "data",
+      "tags": ["news", "world-news", "mcp"]
+    }
+  ]
+}
