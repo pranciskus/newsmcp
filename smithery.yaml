@@ -1,0 +1,18 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      newsApiBaseUrl:
+        type: string
+        default: "https://laikai.lt/api/v1"
+        description: "Base URL for the News API"
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: "node",
+      args: ["dist/index.js"],
+      env: {
+        NEWS_API_BASE_URL: config.newsApiBaseUrl || "https://laikai.lt/api/v1"
+      }
+    })
