@@ -27,6 +27,7 @@ export interface NewsListResponse {
   total: number;
   page: number;
   per_page: number;
+  message?: string;
 }
 
 export interface NewsTerm {

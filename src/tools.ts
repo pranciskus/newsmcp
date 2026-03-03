@@ -70,10 +70,13 @@ export async function handleGetNews(args: z.infer<z.ZodObject<typeof getNewsSche
   const data = await getNews(args);
 
   if (data.events.length === 0) {
-    return "No news events found for the given filters.";
+    return data.message || "No news events found for the given filters.";
   }
 
   const lines: string[] = [];
+  if (data.message) {
+    lines.push(`> ${data.message}\n`);
+  }
   lines.push(`# World News (${data.total} events, page ${data.page}/${Math.ceil(data.total / data.per_page)})\n`);
   for (const event of data.events) {
     lines.push(formatEvent(event));
