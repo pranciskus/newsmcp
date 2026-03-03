@@ -5,7 +5,7 @@ import type {
   NewsRegionsResponse,
 } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://laikai.lt/api/v1";
+const DEFAULT_BASE_URL = "https://newsmcp.io/v1";
 
 function getBaseUrl(): string {
   return (process.env.NEWS_API_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, "");

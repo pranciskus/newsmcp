@@ -5,7 +5,7 @@ startCommand:
     properties:
       newsApiBaseUrl:
         type: string
-        default: "https://laikai.lt/api/v1"
+        default: "https://newsmcp.io/v1"
         description: "Base URL for the News API"
     required: []
   commandFunction: |-
@@ -13,6 +13,6 @@ startCommand:
       command: "node",
       args: ["dist/index.js"],
       env: {
-        NEWS_API_BASE_URL: config.newsApiBaseUrl || "https://laikai.lt/api/v1"
+        NEWS_API_BASE_URL: config.newsApiBaseUrl || "https://newsmcp.io/v1"
       }
     })
