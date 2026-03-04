@@ -1,6 +1,6 @@
 {
   "name": "@newsmcp/server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "World news for AI agents — MCP server with real-time AI-clustered events, topic classification, geographic filtering. Free, no API key.",
   "type": "module",
   "bin": {

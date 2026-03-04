@@ -1,7 +1,7 @@
 ---
 name: newsmcp
 description: Real-time world news briefings with AI-clustered events, topic classification, and geographic filtering. No API key needed.
-version: 1.0.1
+version: 1.0.2
 metadata:
   openclaw:
     requires:
