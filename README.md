@@ -1,4 +1,4 @@
-<h1 align="center">NEWSMCP — World news for AI agents</h1>
+<h1 align="center">NewsMCP — World news for AI agents</h1>
 
 <p align="center">
   <a href="https://newsmcp.io">newsmcp.io</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#integrations">integrations</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="#rest-api">REST API</a>
