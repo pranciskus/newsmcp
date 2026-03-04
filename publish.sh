@@ -5,11 +5,13 @@ cd "$(dirname "$0")"
 
 # --- Package selection ---
 usage() {
-  echo "Usage: $0 <mcp-server|openclaw-plugin>"
+  echo "Usage: $0 <mcp-server|openclaw-plugin|skill|all>"
   echo ""
   echo "Packages:"
-  echo "  mcp-server       Publish @newsmcp/server (MCP server)"
-  echo "  openclaw-plugin   Publish @newsmcp/openclaw (OpenClaw plugin)"
+  echo "  mcp-server        Publish @newsmcp/server (npm + GitHub release + Smithery)"
+  echo "  openclaw-plugin   Publish @newsmcp/openclaw (npm + GitHub release)"
+  echo "  skill             Publish newsmcp skill (ClawHub)"
+  echo "  all               Publish all packages"
   exit 1
 }
 
@@ -17,59 +19,29 @@ if [ $# -lt 1 ]; then
   usage
 fi
 
-case "$1" in
-  mcp-server)
-    PKG_DIR="packages/mcp-server"
-    ;;
-  openclaw-plugin)
-    PKG_DIR="packages/openclaw-plugin"
-    ;;
-  *)
-    echo "ERROR: Unknown package '$1'"
-    usage
-    ;;
-esac
+publish_mcp_server() {
+  local PKG_DIR="packages/mcp-server"
+  local VERSION NAME TAG
+  VERSION=$(node -p "require('./${PKG_DIR}/package.json').version")
+  NAME=$(node -p "require('./${PKG_DIR}/package.json').name")
+  TAG="${NAME}@${VERSION}"
 
-VERSION=$(node -p "require('./${PKG_DIR}/package.json').version")
-NAME=$(node -p "require('./${PKG_DIR}/package.json').name")
-TAG="${NAME}@${VERSION}"
+  echo "=== Publishing ${NAME}@${VERSION} ==="
+  echo ""
 
-echo "=== Publishing ${NAME}@${VERSION} ==="
-echo ""
+  if git rev-parse "$TAG" &>/dev/null; then
+    echo "SKIP: Tag ${TAG} already exists"
+    return 0
+  fi
 
-# 1. Preflight checks
-echo "--- Preflight checks ---"
-
-if ! command -v npm &>/dev/null; then
-  echo "ERROR: npm not found" && exit 1
-fi
-if ! command -v gh &>/dev/null; then
-  echo "ERROR: gh CLI not found (brew install gh)" && exit 1
-fi
-
-if [ -n "$(git status --porcelain)" ]; then
-  echo "ERROR: Working tree is dirty. Commit or stash changes first."
-  git status --short
-  exit 1
-fi
-
-if git rev-parse "$TAG" &>/dev/null; then
-  echo "ERROR: Tag ${TAG} already exists. Bump version in ${PKG_DIR}/package.json first."
-  exit 1
-fi
-
-echo "OK: git clean, tag ${TAG} available"
-echo ""
-
-# 2. Build (mcp-server only — openclaw-plugin uses noEmit)
-if [ "$1" = "mcp-server" ]; then
+  # Build
   echo "--- Building ---"
   rm -rf "${PKG_DIR}/dist"
   npm run build
   echo "OK: Build complete"
   echo ""
 
-  # 3. Test MCP handshake (mcp-server only)
+  # Test MCP handshake
   echo "--- Testing MCP server ---"
   RESPONSE=$(printf '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}\n' | node "${PKG_DIR}/dist/index.js" 2>/dev/null)
   if echo "$RESPONSE" | grep -q 'newsmcp'; then
@@ -80,31 +52,25 @@ if [ "$1" = "mcp-server" ]; then
     exit 1
   fi
   echo ""
-else
-  echo "--- Type-checking ---"
-  (cd "${PKG_DIR}" && npx tsc --noEmit)
-  echo "OK: Type-check passed"
+
+  # npm publish
+  echo "--- Publishing to npm ---"
+  npm -w "${PKG_DIR}" publish --access public
+  echo "OK: Published ${NAME}@${VERSION} to npm"
   echo ""
-fi
 
-# 4. npm publish
-echo "--- Publishing to npm ---"
-npm -w "${PKG_DIR}" publish --access public
-echo "OK: Published ${NAME}@${VERSION} to npm"
-echo ""
+  # Git tag + push
+  echo "--- Tagging ${TAG} ---"
+  git tag -a "$TAG" -m "Release ${NAME}@${VERSION}"
+  git push origin "$TAG"
+  echo "OK: Tag ${TAG} pushed"
+  echo ""
 
-# 5. Git tag + push
-echo "--- Tagging ${TAG} ---"
-git tag -a "$TAG" -m "Release ${NAME}@${VERSION}"
-git push origin "$TAG"
-echo "OK: Tag ${TAG} pushed"
-echo ""
-
-# 6. GitHub release
-echo "--- Creating GitHub release ---"
-gh release create "$TAG" \
-  --title "${TAG}" \
-  --notes "$(cat <<EOF
+  # GitHub release
+  echo "--- Creating GitHub release ---"
+  gh release create "$TAG" \
+    --title "${TAG}" \
+    --notes "$(cat <<EOF
 ## ${NAME}@${VERSION}
 
 World news for AI agents. Free, no API key.
@@ -112,19 +78,14 @@ World news for AI agents. Free, no API key.
 ### Install
 
 \`\`\`bash
-$(if [ "$1" = "mcp-server" ]; then
-  echo "# Claude Desktop / Cursor"
-  echo "npx -y ${NAME}"
-  echo ""
-  echo "# Claude Code"
-  echo "claude mcp add newsmcp -- npx -y ${NAME}"
-  echo ""
-  echo "# Smithery"
-  echo "npx -y @smithery/cli install ${NAME} --client claude"
-else
-  echo "# OpenClaw"
-  echo "openclaw plugins install ${NAME}"
-fi)
+# Claude Desktop / Cursor
+npx -y ${NAME}
+
+# Claude Code
+claude mcp add newsmcp -- npx -y ${NAME}
+
+# Smithery
+npx -y @smithery/cli install ${NAME} --client claude
 \`\`\`
 
 ### Tools
@@ -136,11 +97,10 @@ fi)
 [Docs](https://newsmcp.io) &bull; [README](https://github.com/pranciskus/newsmcp#readme)
 EOF
 )"
-echo "OK: GitHub release created"
-echo ""
+  echo "OK: GitHub release created"
+  echo ""
 
-# 7. Smithery publish (mcp-server only)
-if [ "$1" = "mcp-server" ]; then
+  # Smithery publish
   echo "--- Publishing to Smithery ---"
   if (cd "${PKG_DIR}" && npx -y @smithery/cli@latest publish) 2>&1; then
     echo "OK: Published to Smithery"
@@ -149,11 +109,146 @@ if [ "$1" = "mcp-server" ]; then
     echo "  Run: npx @smithery/cli@latest auth"
   fi
   echo ""
+
+  echo "=== Done: ${TAG} ==="
+  echo "  npm: https://www.npmjs.com/package/${NAME}"
+  echo "  GitHub: https://github.com/pranciskus/newsmcp/releases/tag/${TAG}"
+  echo "  Smithery: https://smithery.ai/server/${NAME}"
+  echo ""
+}
+
+publish_openclaw_plugin() {
+  local PKG_DIR="packages/openclaw-plugin"
+  local VERSION NAME TAG
+  VERSION=$(node -p "require('./${PKG_DIR}/package.json').version")
+  NAME=$(node -p "require('./${PKG_DIR}/package.json').name")
+  TAG="${NAME}@${VERSION}"
+
+  echo "=== Publishing ${NAME}@${VERSION} ==="
+  echo ""
+
+  if git rev-parse "$TAG" &>/dev/null; then
+    echo "SKIP: Tag ${TAG} already exists"
+    return 0
+  fi
+
+  # Type-check
+  echo "--- Type-checking ---"
+  (cd "${PKG_DIR}" && npx tsc --noEmit)
+  echo "OK: Type-check passed"
+  echo ""
+
+  # npm publish
+  echo "--- Publishing to npm ---"
+  npm -w "${PKG_DIR}" publish --access public
+  echo "OK: Published ${NAME}@${VERSION} to npm"
+  echo ""
+
+  # Git tag + push
+  echo "--- Tagging ${TAG} ---"
+  git tag -a "$TAG" -m "Release ${NAME}@${VERSION}"
+  git push origin "$TAG"
+  echo "OK: Tag ${TAG} pushed"
+  echo ""
+
+  # GitHub release
+  echo "--- Creating GitHub release ---"
+  gh release create "$TAG" \
+    --title "${TAG}" \
+    --notes "$(cat <<EOF
+## ${NAME}@${VERSION}
+
+World news for AI agents. Free, no API key.
+
+### Install
+
+\`\`\`bash
+# OpenClaw
+openclaw plugins install ${NAME}
+\`\`\`
+
+### Tools
+- \`get_news\` — top events with topic/geo/time filtering
+- \`get_news_detail\` — full event detail with context
+- \`get_topics\` — available topic categories
+- \`get_regions\` — available geographic regions
+
+[Docs](https://newsmcp.io) &bull; [README](https://github.com/pranciskus/newsmcp#readme)
+EOF
+)"
+  echo "OK: GitHub release created"
+  echo ""
+
+  echo "=== Done: ${TAG} ==="
+  echo "  npm: https://www.npmjs.com/package/${NAME}"
+  echo "  GitHub: https://github.com/pranciskus/newsmcp/releases/tag/${TAG}"
+  echo ""
+}
+
+publish_skill() {
+  local SKILL_DIR="packages/skill"
+  local SKILL_VERSION
+  SKILL_VERSION=$(grep '^version:' "${SKILL_DIR}/SKILL.md" | head -1 | awk '{print $2}')
+
+  echo "=== Publishing skill newsmcp@${SKILL_VERSION} to ClawHub ==="
+  echo ""
+
+  if ! command -v clawhub &>/dev/null; then
+    echo "ERROR: clawhub CLI not found"
+    exit 1
+  fi
+
+  # Verify auth
+  echo "--- Checking ClawHub auth ---"
+  clawhub whoami
+  echo ""
+
+  # Publish
+  echo "--- Publishing to ClawHub ---"
+  clawhub publish "${SKILL_DIR}" \
+    --slug newsmcp \
+    --name "newsmcp" \
+    --version "${SKILL_VERSION}" \
+    --changelog "Multi-event briefing fix: tool descriptions and skill instructions now enforce multi-story presentation"
+  echo ""
+
+  echo "=== Done: skill newsmcp@${SKILL_VERSION} ==="
+  echo ""
+}
+
+# --- Preflight checks ---
+echo "--- Preflight checks ---"
+
+command -v npm &>/dev/null || { echo "ERROR: npm not found"; exit 1; }
+command -v gh  &>/dev/null || { echo "ERROR: gh CLI not found (brew install gh)"; exit 1; }
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "ERROR: Working tree is dirty. Commit or stash changes first."
+  git status --short
+  exit 1
 fi
 
-echo "=== Done ==="
-echo "  npm: https://www.npmjs.com/package/${NAME}"
-echo "  GitHub: https://github.com/pranciskus/newsmcp/releases/tag/${TAG}"
-if [ "$1" = "mcp-server" ]; then
-  echo "  Smithery: https://smithery.ai/server/${NAME}"
-fi
+echo "OK: git clean"
+echo ""
+
+# --- Dispatch ---
+case "$1" in
+  mcp-server)
+    publish_mcp_server
+    ;;
+  openclaw-plugin)
+    publish_openclaw_plugin
+    ;;
+  skill)
+    publish_skill
+    ;;
+  all)
+    publish_mcp_server
+    publish_openclaw_plugin
+    publish_skill
+    ;;
+  *)
+    echo "ERROR: Unknown package '$1'"
+    usage
+    ;;
+esac

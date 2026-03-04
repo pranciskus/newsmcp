@@ -11,12 +11,12 @@ import {
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "newsmcp",
-    version: "1.0.1",
+    version: "1.0.2",
   });
 
   server.tool(
     "get_news",
-    "Get top news events happening in the world right now. Returns AI-clustered news stories with importance ranking. Filter by topic, region, and time window. When presenting results, always include 1-2 source article URLs per event so the user can read more.",
+    "Get top news events happening in the world right now. Returns AI-clustered, deduplicated news stories ranked by importance. Present results as a multi-story news briefing — cover the top events, not just one. Each event should be 1-2 lines with its summary and 1-2 source links. Only deep-dive into a specific event if the user asks for detail.",
     getNewsSchema,
     async (args) => {
       try {

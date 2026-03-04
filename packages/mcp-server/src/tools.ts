@@ -78,6 +78,7 @@ export async function handleGetNews(args: z.infer<z.ZodObject<typeof getNewsSche
     lines.push(`> ${data.message}\n`);
   }
   lines.push(`# World News (${data.total} events, page ${data.page}/${Math.ceil(data.total / data.per_page)})\n`);
+  lines.push(`Present the events below as a multi-story news briefing. Cover the top stories, not just one.\n`);
   for (const event of data.events) {
     lines.push(formatEvent(event));
     lines.push("");

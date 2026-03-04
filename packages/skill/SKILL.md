@@ -1,7 +1,7 @@
 ---
 name: newsmcp
 description: Real-time world news briefings with AI-clustered events, topic classification, and geographic filtering. No API key needed.
-version: 1.0.0
+version: 1.0.1
 metadata:
   openclaw:
     requires:
@@ -134,14 +134,29 @@ When the user asks for news, headlines, or current events:
 
 ## Formatting the Briefing
 
-Present results as a clean news briefing:
+Present results as a **multi-story news briefing** covering the top events — not just one.
 
+**Rules:**
+- List each event separately — 1-2 lines per event with its summary, source count, and 1-2 links
 - Lead with the most important events (highest `sources_count` or `impact_score`)
-- For each event, show the summary and note how many sources covered it
-- Include 1-2 source links for each event so the user can read more
-- Group by topic or region if the user asked for a broad overview
-- Mention the time window and number of events found
+- Related events can be grouped under a shared heading, but don't collapse everything into a single narrative
+- Mention the time window and total number of events found
 - If `topics` or `geo` arrays are present, use them to add context tags
+
+**Output template:**
+```
+Here are today's top stories ({N} events in the last {hours}h):
+
+1. **{Event summary}** — {sources_count} sources · [Source Title](url)
+2. **{Event summary}** — {sources_count} sources · [Source Title](url)
+3. **{Event summary}** — {sources_count} sources · [Source Title](url)
+...
+```
+
+**What NOT to do:**
+- Do NOT present only 1 story when the API returned multiple events (unless the user asked for a single topic)
+- Do NOT write a long essay about one event and ignore the rest
+- Do NOT merge all events into a single combined narrative
 
 ## Topic Slugs Reference
 
@@ -152,6 +167,19 @@ Present results as a clean news briefing:
 **User:** "What's happening in the world today?"
 
 **Action:** Fetch `https://newsmcp.io/v1/news/?hours=24&per_page=10&order_by=-sources_count`
+
+**Expected output format:**
+```
+Here are today's top stories (42 events in the last 24h):
+
+1. **US Senate passes infrastructure bill after marathon session** — 34 sources · [Reuters](url) · [AP News](url)
+2. **Earthquake strikes eastern Turkey, at least 12 dead** — 28 sources · [BBC](url)
+3. **OpenAI announces new reasoning model** — 22 sources · [The Verge](url)
+4. **EU imposes new sanctions on Russian energy sector** — 19 sources · [FT](url)
+5. **Wildfire in California forces thousands to evacuate** — 15 sources · [LA Times](url)
+
+Want more detail on any of these stories?
+```
 
 **User:** "Give me the latest on Ukraine"
 
