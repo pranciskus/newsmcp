@@ -1,6 +1,6 @@
 {
   "name": "newsmcp",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Real-time world news for AI agents. AI-clustered events with topic and geographic filtering. Free, no API key.",
   "author": {
     "name": "pranciskus",

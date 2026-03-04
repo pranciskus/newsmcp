@@ -158,6 +158,10 @@ Here are today's top stories ({N} events in the last {hours}h):
 - Do NOT write a long essay about one event and ignore the rest
 - Do NOT merge all events into a single combined narrative
 
+## Fallback
+
+If the API returns 0 events (due to downtime, narrow filters, or data gaps), use **web search** to find the latest news on the requested topic. Still present results in the multi-story briefing format described above.
+
 ## Topic Slugs Reference
 
 `politics` `economy` `technology` `science` `health` `environment` `sports` `culture` `crime` `military` `education` `society`

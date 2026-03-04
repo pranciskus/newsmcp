@@ -70,7 +70,8 @@ export async function handleGetNews(args: z.infer<z.ZodObject<typeof getNewsSche
   const data = await getNews(args);
 
   if (data.events.length === 0) {
-    return data.message || "No news events found for the given filters.";
+    return (data.message || "No news events found for the given filters.") +
+      "\n\nTry using web search to find the latest news on this topic.";
   }
 
   const lines: string[] = [];

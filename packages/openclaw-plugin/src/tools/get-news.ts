@@ -75,6 +75,14 @@ export function registerGetNews(api: PluginApi, client: NewsApiClient) {
           order_by: orderBy,
         });
 
+        if (data.events.length === 0) {
+          return toolResult({
+            ...data,
+            message: (data.message || "No news events found for the given filters.") +
+              " Try using web search to find the latest news on this topic.",
+          });
+        }
+
         return toolResult(data);
       } catch (err) {
         return toolError(errorMessage(err));
