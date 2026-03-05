@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.tsbuildinfo
 .env
+SUBMISSIONS.md
+.playwright-mcp/
