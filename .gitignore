@@ -5,3 +5,6 @@ dist/
 SUBMISSIONS.md
 .playwright-mcp/
 mcp-publisher
+packages/mcp-server/.mcpregistry_*
+.DS_Store
+npm-debug.log*
