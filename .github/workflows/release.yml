@@ -92,6 +92,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE="@newsmcp/server"
           output="$(npm publish --access public 2>&1)" || status=$?
           status="${status:-0}"
           echo "$output"
@@ -99,8 +101,11 @@ jobs:
             exit 0
           fi
           if grep -qi "previously published versions" <<<"$output"; then
-            echo "Version already published; continuing."
-            exit 0
+            if npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
+              echo "$PACKAGE@$VERSION is already on npm; continuing."
+              exit 0
+            fi
+            echo "Publish failed and $PACKAGE@$VERSION is not visible on npm."
           fi
           exit "$status"
 
@@ -112,6 +117,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE="@newsmcp/openclaw"
           output="$(npm publish --access public 2>&1)" || status=$?
           status="${status:-0}"
           echo "$output"
@@ -119,8 +126,11 @@ jobs:
             exit 0
           fi
           if grep -qi "previously published versions" <<<"$output"; then
-            echo "Version already published; continuing."
-            exit 0
+            if npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
+              echo "$PACKAGE@$VERSION is already on npm; continuing."
+              exit 0
+            fi
+            echo "Publish failed and $PACKAGE@$VERSION is not visible on npm."
           fi
           exit "$status"
 
@@ -151,18 +161,38 @@ jobs:
           mv /tmp/mcp-publisher "$HOME/.local/bin/mcp-publisher"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Wait for npm replication
+        working-directory: packages/mcp-server
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          # Wait until both npm packages are visible before attempting MCP publish.
+          for attempt in $(seq 1 30); do
+            if npm view "@newsmcp/server@$VERSION" version >/dev/null 2>&1 \
+              && npm view "@newsmcp/openclaw@$VERSION" version >/dev/null 2>&1; then
+              echo "npm package versions are visible; continuing."
+              exit 0
+            fi
+            echo "Waiting for npm replication (attempt $attempt/30)..."
+            sleep 20
+          done
+          echo "Timed out waiting for npm versions to be visible."
+          exit 1
+
       - name: Publish MCP metadata (GitHub OIDC)
         working-directory: packages/mcp-server
         shell: bash
         run: |
           set -euo pipefail
-          mcp-publisher login github-oidc
           for attempt in $(seq 1 20); do
+            mcp-publisher login github-oidc
             if mcp-publisher publish server.json; then
               exit 0
             fi
-            echo "MCP publish attempt $attempt failed (likely npm replication delay). Retrying in 30s..."
-            sleep 30
+            echo "MCP publish attempt $attempt failed. Retrying in 20s..."
+            sleep 20
           done
           echo "MCP publish failed after retries."
           exit 1
