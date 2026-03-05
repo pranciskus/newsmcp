@@ -142,7 +142,9 @@ Present results as a **multi-story news briefing** covering the top events — n
 - Related events can be grouped under a shared heading, but don't collapse everything into a single narrative
 - Mention the time window and total number of events found
 - If `topics` or `geo` arrays are present, use them to add context tags
-- If the platform supports linked text, use short-domain source labels linked to article URLs, and avoid raw standalone links or link cards/previews whenever possible.
+- Use linked short-domain source labels for articles when possible, and aggressively prevent rich link cards/previews.
+- Never emit raw standalone URLs.
+- Use the platform's no-preview link format; if that is not reliable, show domain labels only unless the user explicitly asks for full URLs.
 
 **Output template:**
 ```
