@@ -134,6 +134,12 @@ jobs:
           fi
           exit "$status"
 
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+
       - name: Install mcp-publisher
         shell: bash
         env:
@@ -196,9 +202,3 @@ jobs:
           done
           echo "MCP publish failed after retries."
           exit 1
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
