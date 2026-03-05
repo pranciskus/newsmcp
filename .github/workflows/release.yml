@@ -87,11 +87,15 @@ jobs:
       - name: Publish @newsmcp/server to npm (Trusted Publishing)
         if: steps.version_check.outputs.server_exists != 'true'
         working-directory: packages/mcp-server
+        env:
+          NODE_AUTH_TOKEN: ""
         run: npm publish --access public --provenance
 
       - name: Publish @newsmcp/openclaw to npm (Trusted Publishing)
         if: steps.version_check.outputs.openclaw_exists != 'true'
         working-directory: packages/openclaw-plugin
+        env:
+          NODE_AUTH_TOKEN: ""
         run: npm publish --access public --provenance
 
       - name: Install mcp-publisher
