@@ -7,12 +7,12 @@
     "source": "github",
     "subfolder": "packages/mcp-server"
   },
-  "version": "1.0.10",
+  "version": "1.0.11",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@newsmcp/server",
-      "version": "1.0.10",
+      "version": "1.0.11",
       "transport": {
         "type": "stdio"
       }
