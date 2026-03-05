@@ -63,25 +63,34 @@ jobs:
           npm -w packages/mcp-server run build
           npm -w packages/openclaw-plugin run typecheck
 
-      - name: Verify versions are not already on npm
+      - name: Check already-published versions
+        id: version_check
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
+          SERVER_EXISTS=false
+          OPENCLAW_EXISTS=false
+
           if npm view "@newsmcp/server@$VERSION" version >/dev/null 2>&1; then
-            echo "@newsmcp/server@$VERSION already exists on npm."
-            exit 1
+            SERVER_EXISTS=true
           fi
           if npm view "@newsmcp/openclaw@$VERSION" version >/dev/null 2>&1; then
-            echo "@newsmcp/openclaw@$VERSION already exists on npm."
-            exit 1
+            OPENCLAW_EXISTS=true
           fi
 
+          echo "server_exists=$SERVER_EXISTS" >> "$GITHUB_OUTPUT"
+          echo "openclaw_exists=$OPENCLAW_EXISTS" >> "$GITHUB_OUTPUT"
+          echo "@newsmcp/server@$VERSION exists: $SERVER_EXISTS"
+          echo "@newsmcp/openclaw@$VERSION exists: $OPENCLAW_EXISTS"
+
       - name: Publish @newsmcp/server to npm (Trusted Publishing)
+        if: steps.version_check.outputs.server_exists != 'true'
         working-directory: packages/mcp-server
         run: npm publish --access public --provenance
 
       - name: Publish @newsmcp/openclaw to npm (Trusted Publishing)
+        if: steps.version_check.outputs.openclaw_exists != 'true'
         working-directory: packages/openclaw-plugin
         run: npm publish --access public --provenance
 
