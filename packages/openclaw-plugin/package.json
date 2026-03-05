@@ -1,6 +1,6 @@
 {
   "name": "@newsmcp/openclaw",
-  "version": "1.0.13",
+  "version": "1.1.0",
   "description": "OpenClaw plugin for real-time AI-clustered world news — topic and geographic filtering from newsmcp.io. Free, no API key.",
   "type": "module",
   "license": "MIT",
