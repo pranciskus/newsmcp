@@ -1,254 +1,236 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")"
+# Publish newsmcp packages to npm + MCP Registry and create a GitHub release.
+# Usage: ./publish.sh [patch|minor|major]
 
-# --- Package selection ---
-usage() {
-  echo "Usage: $0 <mcp-server|openclaw-plugin|skill|all>"
-  echo ""
-  echo "Packages:"
-  echo "  mcp-server        Publish @newsmcp/server (npm + GitHub release + Smithery)"
-  echo "  openclaw-plugin   Publish @newsmcp/openclaw (npm + GitHub release)"
-  echo "  skill             Publish newsmcp skill (ClawHub)"
-  echo "  all               Publish all packages"
-  exit 1
-}
+BUMP="${1:-patch}"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+SERVER_DIR="$ROOT/packages/mcp-server"
+OPENCLAW_DIR="$ROOT/packages/openclaw-plugin"
+SERVER_JSON="$SERVER_DIR/server.json"
+BRANCH="$(git -C "$ROOT" branch --show-current)"
 
-if [ $# -lt 1 ]; then
-  usage
-fi
-
-publish_mcp_server() {
-  local PKG_DIR="packages/mcp-server"
-  local VERSION NAME TAG
-  VERSION=$(node -p "require('./${PKG_DIR}/package.json').version")
-  NAME=$(node -p "require('./${PKG_DIR}/package.json').name")
-  TAG="${NAME}@${VERSION}"
-
-  echo "=== Publishing ${NAME}@${VERSION} ==="
-  echo ""
-
-  if git rev-parse "$TAG" &>/dev/null; then
-    echo "SKIP: Tag ${TAG} already exists"
-    return 0
-  fi
-
-  # Build
-  echo "--- Building ---"
-  rm -rf "${PKG_DIR}/dist"
-  npm run build
-  echo "OK: Build complete"
-  echo ""
-
-  # Test MCP handshake
-  echo "--- Testing MCP server ---"
-  RESPONSE=$(printf '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}\n' | node "${PKG_DIR}/dist/index.js" 2>/dev/null)
-  if echo "$RESPONSE" | grep -q 'newsmcp'; then
-    echo "OK: MCP server responds correctly"
-  else
-    echo "ERROR: MCP server did not respond as expected"
-    echo "$RESPONSE"
-    exit 1
-  fi
-  echo ""
-
-  # npm publish
-  echo "--- Publishing to npm ---"
-  npm -w "${PKG_DIR}" publish --access public
-  echo "OK: Published ${NAME}@${VERSION} to npm"
-  echo ""
-
-  # Git tag + push
-  echo "--- Tagging ${TAG} ---"
-  git tag -a "$TAG" -m "Release ${NAME}@${VERSION}"
-  git push origin "$TAG"
-  echo "OK: Tag ${TAG} pushed"
-  echo ""
-
-  # GitHub release
-  echo "--- Creating GitHub release ---"
-  gh release create "$TAG" \
-    --title "${TAG}" \
-    --notes "$(cat <<EOF
-## ${NAME}@${VERSION}
-
-World news for AI agents. Free, no API key.
-
-### Install
-
-\`\`\`bash
-# Claude Desktop / Cursor
-npx -y ${NAME}
-
-# Claude Code
-claude mcp add newsmcp -- npx -y ${NAME}
-
-# Smithery
-npx -y @smithery/cli install ${NAME} --client claude
-\`\`\`
-
-### Tools
-- \`get_news\` — top events with topic/geo/time filtering
-- \`get_news_detail\` — full event detail with context
-- \`get_topics\` — available topic categories
-- \`get_regions\` — available geographic regions
-
-[Docs](https://newsmcp.io) &bull; [README](https://github.com/pranciskus/newsmcp#readme)
-EOF
-)"
-  echo "OK: GitHub release created"
-  echo ""
-
-  # Smithery publish
-  echo "--- Publishing to Smithery ---"
-  if (cd "${PKG_DIR}" && npx -y @smithery/cli@latest publish) 2>&1; then
-    echo "OK: Published to Smithery"
-  else
-    echo "WARN: Smithery publish failed (you may need to authenticate first)"
-    echo "  Run: npx @smithery/cli@latest auth"
-  fi
-  echo ""
-
-  echo "=== Done: ${TAG} ==="
-  echo "  npm: https://www.npmjs.com/package/${NAME}"
-  echo "  GitHub: https://github.com/pranciskus/newsmcp/releases/tag/${TAG}"
-  echo "  Smithery: https://smithery.ai/server/${NAME}"
-  echo ""
-}
-
-publish_openclaw_plugin() {
-  local PKG_DIR="packages/openclaw-plugin"
-  local VERSION NAME TAG
-  VERSION=$(node -p "require('./${PKG_DIR}/package.json').version")
-  NAME=$(node -p "require('./${PKG_DIR}/package.json').name")
-  TAG="${NAME}@${VERSION}"
-
-  echo "=== Publishing ${NAME}@${VERSION} ==="
-  echo ""
-
-  if git rev-parse "$TAG" &>/dev/null; then
-    echo "SKIP: Tag ${TAG} already exists"
-    return 0
-  fi
-
-  # Type-check
-  echo "--- Type-checking ---"
-  (cd "${PKG_DIR}" && npx tsc --noEmit)
-  echo "OK: Type-check passed"
-  echo ""
-
-  # npm publish
-  echo "--- Publishing to npm ---"
-  npm -w "${PKG_DIR}" publish --access public
-  echo "OK: Published ${NAME}@${VERSION} to npm"
-  echo ""
-
-  # Git tag + push
-  echo "--- Tagging ${TAG} ---"
-  git tag -a "$TAG" -m "Release ${NAME}@${VERSION}"
-  git push origin "$TAG"
-  echo "OK: Tag ${TAG} pushed"
-  echo ""
-
-  # GitHub release
-  echo "--- Creating GitHub release ---"
-  gh release create "$TAG" \
-    --title "${TAG}" \
-    --notes "$(cat <<EOF
-## ${NAME}@${VERSION}
-
-World news for AI agents. Free, no API key.
-
-### Install
-
-\`\`\`bash
-# OpenClaw
-openclaw plugins install ${NAME}
-\`\`\`
-
-### Tools
-- \`get_news\` — top events with topic/geo/time filtering
-- \`get_news_detail\` — full event detail with context
-- \`get_topics\` — available topic categories
-- \`get_regions\` — available geographic regions
-
-[Docs](https://newsmcp.io) &bull; [README](https://github.com/pranciskus/newsmcp#readme)
-EOF
-)"
-  echo "OK: GitHub release created"
-  echo ""
-
-  echo "=== Done: ${TAG} ==="
-  echo "  npm: https://www.npmjs.com/package/${NAME}"
-  echo "  GitHub: https://github.com/pranciskus/newsmcp/releases/tag/${TAG}"
-  echo ""
-}
-
-publish_skill() {
-  local SKILL_DIR="packages/skill"
-  local SKILL_VERSION
-  SKILL_VERSION=$(grep '^version:' "${SKILL_DIR}/SKILL.md" | head -1 | awk '{print $2}')
-
-  echo "=== Publishing skill newsmcp@${SKILL_VERSION} to ClawHub ==="
-  echo ""
-
-  if ! command -v clawhub &>/dev/null; then
-    echo "ERROR: clawhub CLI not found"
-    exit 1
-  fi
-
-  # Verify auth
-  echo "--- Checking ClawHub auth ---"
-  clawhub whoami
-  echo ""
-
-  # Publish
-  echo "--- Publishing to ClawHub ---"
-  clawhub publish "${SKILL_DIR}" \
-    --slug newsmcp \
-    --name "newsmcp" \
-    --version "${SKILL_VERSION}" \
-    --changelog "Multi-event briefing fix: tool descriptions and skill instructions now enforce multi-story presentation"
-  echo ""
-
-  echo "=== Done: skill newsmcp@${SKILL_VERSION} ==="
-  echo ""
-}
-
-# --- Preflight checks ---
-echo "--- Preflight checks ---"
-
-command -v npm &>/dev/null || { echo "ERROR: npm not found"; exit 1; }
-command -v gh  &>/dev/null || { echo "ERROR: gh CLI not found (brew install gh)"; exit 1; }
-
-if [ -n "$(git status --porcelain)" ]; then
-  echo "ERROR: Working tree is dirty. Commit or stash changes first."
-  git status --short
+if [[ ! "$BUMP" =~ ^(patch|minor|major)$ ]]; then
+  echo "Usage: ./publish.sh [patch|minor|major]"
   exit 1
 fi
 
-echo "OK: git clean"
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Missing required command: $1"
+    exit 1
+  fi
+}
+
+open_url() {
+  local url="$1"
+  if command -v open >/dev/null 2>&1; then
+    open "$url" >/dev/null 2>&1 || true
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$url" >/dev/null 2>&1 || true
+  fi
+}
+
+find_mcp_publisher() {
+  if [[ -x "$ROOT/mcp-publisher" ]]; then
+    echo "$ROOT/mcp-publisher"
+    return 0
+  fi
+  if command -v mcp-publisher >/dev/null 2>&1; then
+    command -v mcp-publisher
+    return 0
+  fi
+  if [[ -x "$HOME/.local/bin/mcp-publisher" ]]; then
+    echo "$HOME/.local/bin/mcp-publisher"
+    return 0
+  fi
+  return 1
+}
+
+ensure_clean_worktree() {
+  if [[ -n "$(git -C "$ROOT" status --porcelain)" ]]; then
+    echo "Working tree is not clean. Commit/stash changes before publishing."
+    git -C "$ROOT" status --short
+    exit 1
+  fi
+}
+
+ensure_npm_auth() {
+  if npm whoami >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "npm auth required. Opening browser for login..."
+  open_url "https://www.npmjs.com/login"
+  npm login --auth-type=web
+  npm whoami >/dev/null
+}
+
+ensure_gh_auth() {
+  if gh auth status -h github.com >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "GitHub CLI auth required. Opening browser for login..."
+  open_url "https://github.com/login"
+  gh auth login -h github.com --web -s repo
+}
+
+npm_publish_with_retry() {
+  local dir="$1"
+  local pkg="$2"
+  local otp=""
+  local output=""
+  local status=0
+
+  while true; do
+    set +e
+    if [[ -n "$otp" ]]; then
+      output="$(cd "$dir" && npm publish --access public --otp "$otp" 2>&1)"
+    else
+      output="$(cd "$dir" && npm publish --access public 2>&1)"
+    fi
+    status=$?
+    set -e
+    echo "$output"
+
+    if [[ $status -eq 0 ]]; then
+      return 0
+    fi
+
+    if grep -q "code EOTP" <<<"$output"; then
+      read -r -p "Enter npm OTP for $pkg: " otp
+      continue
+    fi
+
+    if grep -qiE "E401|access token expired|revoked|Unauthorized" <<<"$output"; then
+      echo "Refreshing npm auth..."
+      open_url "https://www.npmjs.com/login"
+      npm login --auth-type=web
+      otp=""
+      continue
+    fi
+
+    echo "npm publish failed for $pkg."
+    return $status
+  done
+}
+
+update_server_json_version() {
+  local version="$1"
+  node - "$SERVER_JSON" "$version" <<'NODE'
+const fs = require("fs");
+const file = process.argv[2];
+const version = process.argv[3];
+const data = JSON.parse(fs.readFileSync(file, "utf8"));
+data.version = version;
+if (Array.isArray(data.packages)) {
+  for (const pkg of data.packages) {
+    if (pkg && pkg.registryType === "npm" && pkg.identifier === "@newsmcp/server") {
+      pkg.version = version;
+    }
+  }
+}
+fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
+NODE
+}
+
+mcp_publish_with_retry() {
+  local publisher="$1"
+  local output=""
+  local status=0
+
+  while true; do
+    set +e
+    output="$(cd "$SERVER_DIR" && "$publisher" publish 2>&1)"
+    status=$?
+    set -e
+    echo "$output"
+
+    if [[ $status -eq 0 ]]; then
+      return 0
+    fi
+
+    if grep -qiE "401|unauthorized|expired|invalid.*token|not authenticated" <<<"$output"; then
+      echo "Refreshing MCP Registry auth..."
+      open_url "https://github.com/login/device"
+      (cd "$SERVER_DIR" && "$publisher" login github)
+      continue
+    fi
+
+    echo "MCP Registry publish failed."
+    return $status
+  done
+}
+
+create_git_commit_tag_and_release() {
+  local version="$1"
+  local tag="v$version"
+
+  git -C "$ROOT" add \
+    package-lock.json \
+    packages/mcp-server/package.json \
+    packages/openclaw-plugin/package.json \
+    packages/mcp-server/server.json
+  git -C "$ROOT" commit -m "Release $tag"
+
+  if git -C "$ROOT" rev-parse "$tag" >/dev/null 2>&1; then
+    echo "Tag $tag already exists, skipping tag creation."
+  else
+    git -C "$ROOT" tag -a "$tag" -m "$tag"
+  fi
+
+  git -C "$ROOT" push origin "$BRANCH"
+  git -C "$ROOT" push origin "$tag"
+
+  if gh release view "$tag" >/dev/null 2>&1; then
+    echo "GitHub release $tag already exists, skipping."
+  else
+    gh release create "$tag" --title "$tag" --generate-notes
+  fi
+}
+
+require_cmd git
+require_cmd npm
+require_cmd node
+require_cmd gh
+MCP_PUBLISHER="$(find_mcp_publisher || true)"
+if [[ -z "$MCP_PUBLISHER" ]]; then
+  echo "Could not find mcp-publisher binary."
+  echo "Expected one of: ./mcp-publisher, mcp-publisher in PATH, ~/.local/bin/mcp-publisher"
+  exit 1
+fi
+
+ensure_clean_worktree
+ensure_npm_auth
+ensure_gh_auth
+
+echo "=== Building ==="
+(cd "$SERVER_DIR" && npm run build)
+(cd "$OPENCLAW_DIR" && npm run typecheck)
+
 echo ""
+echo "=== Publishing @newsmcp/server to npm ==="
+(cd "$SERVER_DIR" && npm version "$BUMP" --no-git-tag-version)
+VERSION="$(node -p "require('$SERVER_DIR/package.json').version")"
+npm_publish_with_retry "$SERVER_DIR" "@newsmcp/server"
+echo "Published @newsmcp/server@$VERSION"
 
-# --- Dispatch ---
-case "$1" in
-  mcp-server)
-    publish_mcp_server
-    ;;
-  openclaw-plugin)
-    publish_openclaw_plugin
-    ;;
-  skill)
-    publish_skill
-    ;;
-  all)
-    publish_mcp_server
-    publish_openclaw_plugin
-    publish_skill
-    ;;
-  *)
-    echo "ERROR: Unknown package '$1'"
-    usage
-    ;;
-esac
+echo ""
+echo "=== Publishing @newsmcp/openclaw to npm ==="
+(cd "$OPENCLAW_DIR" && npm version "$VERSION" --no-git-tag-version --allow-same-version)
+npm_publish_with_retry "$OPENCLAW_DIR" "@newsmcp/openclaw"
+echo "Published @newsmcp/openclaw@$VERSION"
+
+echo ""
+echo "=== Publishing to MCP Registry ==="
+update_server_json_version "$VERSION"
+mcp_publish_with_retry "$MCP_PUBLISHER"
+echo "Published to MCP Registry"
+
+echo ""
+echo "=== Creating commit, tag, push, and GitHub release ==="
+create_git_commit_tag_and_release "$VERSION"
+
+echo ""
+echo "=== Done ==="
+echo "Published version $VERSION to npm + MCP Registry and created GitHub release."
