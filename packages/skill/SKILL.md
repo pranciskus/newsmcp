@@ -142,17 +142,17 @@ Present results as a **multi-story news briefing** covering the top events — n
 - Related events can be grouped under a shared heading, but don't collapse everything into a single narrative
 - Mention the time window and total number of events found
 - If `topics` or `geo` arrays are present, use them to add context tags
-- Use linked short-domain source labels for articles when possible, and aggressively prevent rich link cards/previews.
-- Never emit raw standalone URLs.
-- Use the platform's no-preview link format; if that is not reliable, show domain labels only unless the user explicitly asks for full URLs.
+- Prioritize suppressing rich link cards/previews over pretty link labels.
+- For Discord-style clients, format sources as `domain: <https://...>` and do not use masked markdown links.
+- Never emit raw standalone URLs outside no-preview wrappers.
 
 **Output template:**
 ```
 Here are today's top stories ({N} events in the last {hours}h):
 
-1. **{Event summary}** — {sources_count} sources · linked source: domain.tld
-2. **{Event summary}** — {sources_count} sources · linked source: domain.tld
-3. **{Event summary}** — {sources_count} sources · linked source: domain.tld
+1. **{Event summary}** — {sources_count} sources · domain.tld: <https://...>
+2. **{Event summary}** — {sources_count} sources · domain.tld: <https://...>
+3. **{Event summary}** — {sources_count} sources · domain.tld: <https://...>
 ...
 ```
 
@@ -179,11 +179,11 @@ If the API returns 0 events (due to downtime, narrow filters, or data gaps), use
 ```
 Here are today's top stories (42 events in the last 24h):
 
-1. **US Senate passes infrastructure bill after marathon session** — 34 sources · linked sources: reuters.com, apnews.com
-2. **Earthquake strikes eastern Turkey, at least 12 dead** — 28 sources · linked source: bbc.com
-3. **OpenAI announces new reasoning model** — 22 sources · linked source: theverge.com
-4. **EU imposes new sanctions on Russian energy sector** — 19 sources · linked source: ft.com
-5. **Wildfire in California forces thousands to evacuate** — 15 sources · linked source: latimes.com
+1. **US Senate passes infrastructure bill after marathon session** — 34 sources · reuters.com: <https://...> · apnews.com: <https://...>
+2. **Earthquake strikes eastern Turkey, at least 12 dead** — 28 sources · bbc.com: <https://...>
+3. **OpenAI announces new reasoning model** — 22 sources · theverge.com: <https://...>
+4. **EU imposes new sanctions on Russian energy sector** — 19 sources · ft.com: <https://...>
+5. **Wildfire in California forces thousands to evacuate** — 15 sources · latimes.com: <https://...>
 
 Want more detail on any of these stories?
 ```

@@ -57,7 +57,7 @@ function formatEvent(event: NewsEvent): string {
     lines.push("Sources:");
     for (const entry of event.entries.slice(0, 5)) {
       const title = entry.title || entry.domain;
-      lines.push(`  - [${entry.domain}](<${entry.url}>)${title ? ` - ${title}` : ""}`);
+      lines.push(`  - ${entry.domain}: <${entry.url}>${title ? ` - ${title}` : ""}`);
     }
     if (event.entries.length > 5) {
       lines.push(`  ... and ${event.entries.length - 5} more`);
@@ -81,7 +81,7 @@ export async function handleGetNews(args: z.infer<z.ZodObject<typeof getNewsSche
   lines.push(`# World News (${data.total} events, page ${data.page}/${Math.ceil(data.total / data.per_page)})\n`);
   lines.push(`Present the events below as a multi-story news briefing. Cover the top stories, not just one.\n`);
   lines.push(
-    "Formatting tip: Use linked short-domain source labels and aggressively avoid rich link previews/cards. Never emit raw standalone URLs. Use the platform's no-preview link format, and if that is not reliable, show only domain labels unless full URLs are explicitly requested.\n",
+    "Formatting tip: Prioritize suppressing rich previews/cards. For Discord-style clients, use 'domain: <https://...>' and avoid masked markdown links. Never emit raw standalone URLs outside no-preview wrappers.\n",
   );
   for (const event of data.events) {
     lines.push(formatEvent(event));

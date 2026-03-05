@@ -8,7 +8,7 @@ export function registerGetNewsDetail(api: PluginApi, client: NewsApiClient) {
   api.registerTool({
     name: "newsmcp_get_news_detail",
     description:
-      "Get full details for a single news event — all source articles, AI-generated context, impact analysis. Use event IDs from newsmcp_get_news results. Include source article URLs so the user can read original reporting, but aggressively prevent rich link cards/previews: use short-domain linked labels and the platform's no-preview link format, and never emit raw standalone URLs. If no reliable no-preview format exists, show domain labels and provide full URLs only when explicitly requested.",
+      "Get full details for a single news event — all source articles, AI-generated context, impact analysis. Use event IDs from newsmcp_get_news results. Include source article URLs so the user can read original reporting, but prioritize suppressing rich link cards/previews. For Discord-style clients, format sources as 'domain: <https://...>' and avoid masked markdown links. Never emit raw standalone URLs outside no-preview wrappers.",
     parameters: {
       type: "object" as const,
       properties: {
