@@ -4,3 +4,4 @@ dist/
 .env
 SUBMISSIONS.md
 .playwright-mcp/
+mcp-publisher
