@@ -16,7 +16,7 @@ export function createServer(): McpServer {
 
   server.tool(
     "get_news",
-    "Get top news events happening in the world right now. Returns AI-clustered, deduplicated news stories ranked by importance. Present results as a multi-story news briefing — cover the top events, not just one. Each event should be 1-2 lines with its summary and 1-2 source links. Prioritize suppressing rich link cards/previews over pretty link labels. For Discord-style clients, format sources as 'domain: <https://...>' (angle-bracket URLs) and do not use masked markdown links. Never emit raw standalone URLs outside no-preview wrappers. Only deep-dive into a specific event if the user asks for detail.",
+    "Get top news events happening in the world right now. Returns AI-clustered, deduplicated news stories ranked by importance. Present results as a multi-story news briefing — cover the top events, not just one. Each event should be 1-2 lines with its summary and 1-2 source links. Prioritize suppressing rich link cards/previews over pretty link labels. For Discord-style clients, output source URLs directly as '<https://...>' and do not use masked markdown links. Never emit raw standalone URLs outside no-preview wrappers. Only deep-dive into a specific event if the user asks for detail.",
     getNewsSchema,
     async (args) => {
       try {
@@ -33,7 +33,7 @@ export function createServer(): McpServer {
 
   server.tool(
     "get_news_detail",
-    "Get full details about a specific news event including context and all source articles. Use an event ID from get_news results. Include source article URLs so the user can read original reporting, but prioritize suppressing rich link cards/previews. For Discord-style clients, format sources as 'domain: <https://...>' and avoid masked markdown links. Never emit raw standalone URLs outside no-preview wrappers.",
+    "Get full details about a specific news event including context and all source articles. Use an event ID from get_news results. Include source article URLs so the user can read original reporting, but prioritize suppressing rich link cards/previews. For Discord-style clients, output source URLs directly as '<https://...>' and avoid masked markdown links. Never emit raw standalone URLs outside no-preview wrappers.",
     getNewsDetailSchema,
     async (args) => {
       try {

@@ -143,16 +143,16 @@ Present results as a **multi-story news briefing** covering the top events — n
 - Mention the time window and total number of events found
 - If `topics` or `geo` arrays are present, use them to add context tags
 - Prioritize suppressing rich link cards/previews over pretty link labels.
-- For Discord-style clients, format sources as `domain: <https://...>` and do not use masked markdown links.
+- For Discord-style clients, output source URLs directly as `<https://...>` and do not use masked markdown links.
 - Never emit raw standalone URLs outside no-preview wrappers.
 
 **Output template:**
 ```
 Here are today's top stories ({N} events in the last {hours}h):
 
-1. **{Event summary}** — {sources_count} sources · domain.tld: <https://...>
-2. **{Event summary}** — {sources_count} sources · domain.tld: <https://...>
-3. **{Event summary}** — {sources_count} sources · domain.tld: <https://...>
+1. **{Event summary}** — {sources_count} sources · <https://...>
+2. **{Event summary}** — {sources_count} sources · <https://...>
+3. **{Event summary}** — {sources_count} sources · <https://...>
 ...
 ```
 
@@ -179,11 +179,11 @@ If the API returns 0 events (due to downtime, narrow filters, or data gaps), use
 ```
 Here are today's top stories (42 events in the last 24h):
 
-1. **US Senate passes infrastructure bill after marathon session** — 34 sources · reuters.com: <https://...> · apnews.com: <https://...>
-2. **Earthquake strikes eastern Turkey, at least 12 dead** — 28 sources · bbc.com: <https://...>
-3. **OpenAI announces new reasoning model** — 22 sources · theverge.com: <https://...>
-4. **EU imposes new sanctions on Russian energy sector** — 19 sources · ft.com: <https://...>
-5. **Wildfire in California forces thousands to evacuate** — 15 sources · latimes.com: <https://...>
+1. **US Senate passes infrastructure bill after marathon session** — 34 sources · <https://...> · <https://...>
+2. **Earthquake strikes eastern Turkey, at least 12 dead** — 28 sources · <https://...>
+3. **OpenAI announces new reasoning model** — 22 sources · <https://...>
+4. **EU imposes new sanctions on Russian energy sector** — 19 sources · <https://...>
+5. **Wildfire in California forces thousands to evacuate** — 15 sources · <https://...>
 
 Want more detail on any of these stories?
 ```
