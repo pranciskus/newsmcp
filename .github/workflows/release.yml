@@ -98,7 +98,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          API_JSON="$(curl -fsSL https://api.github.com/repos/modelcontextprotocol/registry/releases/latest)"
           OS="linux"
           ARCH="$(uname -m)"
           case "$ARCH" in
@@ -110,13 +109,10 @@ jobs:
               ;;
           esac
           ASSET_NAME="mcp-publisher_${OS}_${ARCH}.tar.gz"
-          URL="$(python3 -c 'import json,sys; a=sys.argv[1]; d=json.loads(sys.argv[2]); m=[x["browser_download_url"] for x in d.get("assets",[]) if x.get("name")==a]; print(m[0] if m else "");' "$ASSET_NAME" "$API_JSON")"
-          if [[ -z "$URL" ]]; then
-            echo "Could not find mcp-publisher release asset: $ASSET_NAME"
-            exit 1
-          fi
-
-          curl -fsSL "$URL" -o /tmp/mcp-publisher.tar.gz
+          gh release download \
+            --repo modelcontextprotocol/registry \
+            --pattern "$ASSET_NAME" \
+            --output /tmp/mcp-publisher.tar.gz
           tar -xzf /tmp/mcp-publisher.tar.gz -C /tmp mcp-publisher
           chmod +x /tmp/mcp-publisher
           mkdir -p "$HOME/.local/bin"
