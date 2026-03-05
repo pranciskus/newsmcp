@@ -3,6 +3,9 @@ set -euo pipefail
 
 # Publish newsmcp packages to npm + MCP Registry and create a GitHub release.
 # Usage: ./publish.sh [patch|minor|major]
+# Auth options:
+#   - Preferred: export NPM_TOKEN=<npm automation token>
+#   - Fallback: browser login (may still require OTP depending on npm 2FA policy)
 
 BUMP="${1:-patch}"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -10,6 +13,7 @@ SERVER_DIR="$ROOT/packages/mcp-server"
 OPENCLAW_DIR="$ROOT/packages/openclaw-plugin"
 SERVER_JSON="$SERVER_DIR/server.json"
 BRANCH="$(git -C "$ROOT" branch --show-current)"
+TMP_NPMRC=""
 
 if [[ ! "$BUMP" =~ ^(patch|minor|major)$ ]]; then
   echo "Usage: ./publish.sh [patch|minor|major]"
@@ -22,6 +26,13 @@ require_cmd() {
     exit 1
   fi
 }
+
+cleanup() {
+  if [[ -n "$TMP_NPMRC" && -f "$TMP_NPMRC" ]]; then
+    rm -f "$TMP_NPMRC"
+  fi
+}
+trap cleanup EXIT
 
 open_url() {
   local url="$1"
@@ -56,7 +67,24 @@ ensure_clean_worktree() {
   fi
 }
 
+configure_npm_auth() {
+  if [[ -n "${NPM_TOKEN:-}" ]]; then
+    TMP_NPMRC="$(mktemp)"
+    printf "//registry.npmjs.org/:_authToken=%s\n" "$NPM_TOKEN" >"$TMP_NPMRC"
+    export NPM_CONFIG_USERCONFIG="$TMP_NPMRC"
+    echo "Using NPM_TOKEN for npm auth."
+  fi
+}
+
 ensure_npm_auth() {
+  if [[ -n "${NPM_TOKEN:-}" ]]; then
+    if npm whoami >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "NPM_TOKEN is set but npm auth failed."
+    echo "Check token validity/scope and ensure it is an Automation token."
+    exit 1
+  fi
   if npm whoami >/dev/null 2>&1; then
     return 0
   fi
@@ -94,6 +122,12 @@ npm_publish_with_retry() {
     fi
 
     if grep -q "code EOTP" <<<"$output"; then
+      if [[ -n "${NPM_TOKEN:-}" ]]; then
+        echo "npm publish for $pkg still requires OTP while using NPM_TOKEN."
+        echo "Your token is likely not an Automation token."
+        echo "Create an Automation token and export NPM_TOKEN, then rerun."
+        return 1
+      fi
       if [[ $auth_retry_done -eq 0 ]]; then
         echo "npm publish requires extra auth; retrying after browser login..."
         open_url "https://www.npmjs.com/login"
@@ -103,7 +137,8 @@ npm_publish_with_retry() {
       fi
       echo "npm publish for $pkg still requires one-time password (write 2FA)."
       echo "Browser auth cannot bypass publish OTP for write-protected accounts."
-      echo "Use an npm automation token (NPM_TOKEN) or change npm 2FA policy, then rerun."
+      echo "Open https://www.npmjs.com/settings/<user>/tokens and create an Automation token,"
+      echo "then rerun with: export NPM_TOKEN='<token>'"
       return 1
     fi
 
@@ -204,6 +239,7 @@ if [[ -z "$MCP_PUBLISHER" ]]; then
   exit 1
 fi
 
+configure_npm_auth
 ensure_clean_worktree
 ensure_npm_auth
 ensure_gh_auth
