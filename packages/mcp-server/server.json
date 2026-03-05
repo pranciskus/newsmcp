@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.pranciskus/newsmcp",
+  "description": "Real-time world news for AI agents. 50+ regions, topic filtering. Free, no API key.",
+  "repository": {
+    "url": "https://github.com/pranciskus/newsmcp",
+    "source": "github",
+    "subfolder": "packages/mcp-server"
+  },
+  "version": "1.0.7",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@newsmcp/server",
+      "version": "1.0.7",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

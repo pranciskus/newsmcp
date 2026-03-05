@@ -16,7 +16,7 @@ export function createServer(): McpServer {
 
   server.tool(
     "get_news",
-    "Get top news events happening in the world right now. Returns AI-clustered, deduplicated news stories ranked by importance. Present results as a multi-story news briefing — cover the top events, not just one. Each event should be 1-2 lines with its summary and 1-2 source links. Only deep-dive into a specific event if the user asks for detail.",
+    "Get top news events happening in the world right now. Returns AI-clustered, deduplicated news stories ranked by importance. Present results as a multi-story news briefing — cover the top events, not just one. Each event should be 1-2 lines with its summary and 1-2 source links. For platforms that support formatting, use short-domain Markdown links like [tv3.lt](https://...). If formatting is unavailable, use plain URLs. Only deep-dive into a specific event if the user asks for detail.",
     getNewsSchema,
     async (args) => {
       try {
@@ -33,7 +33,7 @@ export function createServer(): McpServer {
 
   server.tool(
     "get_news_detail",
-    "Get full details about a specific news event including context and all source articles. Use an event ID from get_news results. Always include source article URLs in your response so the user can read the original reporting.",
+    "Get full details about a specific news event including context and all source articles. Use an event ID from get_news results. Always include source article URLs in your response so the user can read the original reporting. For platforms that support formatting, prefer short-domain Markdown links like [lrt.lt](https://...).",
     getNewsDetailSchema,
     async (args) => {
       try {
