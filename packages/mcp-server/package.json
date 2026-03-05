@@ -1,6 +1,6 @@
 {
   "name": "@newsmcp/server",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "mcpName": "io.github.pranciskus/newsmcp",
   "description": "World news for AI agents — MCP server with real-time AI-clustered events, topic classification, geographic filtering. Free, no API key.",
   "type": "module",
