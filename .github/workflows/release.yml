@@ -167,24 +167,23 @@ jobs:
           mv /tmp/mcp-publisher "$HOME/.local/bin/mcp-publisher"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Wait for npm replication
+      - name: Wait for @newsmcp/server npm replication
         working-directory: packages/mcp-server
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
 
-          # Wait until both npm packages are visible before attempting MCP publish.
+          # MCP registry metadata references @newsmcp/server only.
           for attempt in $(seq 1 30); do
-            if npm view "@newsmcp/server@$VERSION" version >/dev/null 2>&1 \
-              && npm view "@newsmcp/openclaw@$VERSION" version >/dev/null 2>&1; then
-              echo "npm package versions are visible; continuing."
+            if npm view "@newsmcp/server@$VERSION" version >/dev/null 2>&1; then
+              echo "@newsmcp/server@$VERSION is visible; continuing."
               exit 0
             fi
-            echo "Waiting for npm replication (attempt $attempt/30)..."
+            echo "Waiting for @newsmcp/server npm replication (attempt $attempt/30)..."
             sleep 20
           done
-          echo "Timed out waiting for npm versions to be visible."
+          echo "Timed out waiting for @newsmcp/server@$VERSION to be visible."
           exit 1
 
       - name: Publish MCP metadata (GitHub OIDC)
