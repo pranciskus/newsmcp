@@ -81,7 +81,7 @@ export async function handleGetNews(args: z.infer<z.ZodObject<typeof getNewsSche
   lines.push(`# World News (${data.total} events, page ${data.page}/${Math.ceil(data.total / data.per_page)})\n`);
   lines.push(`Present the events below as a multi-story news briefing. Cover the top stories, not just one.\n`);
   lines.push(
-    "Formatting tip: For platforms that support formatting, use short-domain Markdown links like [tv3.lt](https://...). If formatting is unavailable, use plain URLs.\n",
+    "Formatting tip: If the platform supports linked text, use short-domain source labels linked to article URLs, and avoid raw standalone links or link cards/previews whenever possible.\n",
   );
   for (const event of data.events) {
     lines.push(formatEvent(event));

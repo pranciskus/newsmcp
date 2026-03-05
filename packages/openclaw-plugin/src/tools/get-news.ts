@@ -19,7 +19,7 @@ export function registerGetNews(api: PluginApi, client: NewsApiClient) {
   api.registerTool({
     name: "newsmcp_get_news",
     description:
-      "Get top news events happening in the world right now. Returns AI-clustered, deduplicated news stories ranked by importance. Present results as a multi-story news briefing — cover the top events, not just one. Each event should be 1-2 lines with its summary and 1-2 source links. For platforms that support formatting, use short-domain Markdown links like [tv3.lt](https://...). If formatting is unavailable, use plain URLs. Only deep-dive into a specific event if the user asks for detail.",
+      "Get top news events happening in the world right now. Returns AI-clustered, deduplicated news stories ranked by importance. Present results as a multi-story news briefing — cover the top events, not just one. Each event should be 1-2 lines with its summary and 1-2 source links. If the platform supports linked text, use short-domain source labels that link to the article URLs, and avoid raw standalone links or link cards/previews whenever possible. Only deep-dive into a specific event if the user asks for detail.",
     parameters: {
       type: "object" as const,
       properties: {
