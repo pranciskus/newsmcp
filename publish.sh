@@ -78,17 +78,13 @@ ensure_gh_auth() {
 npm_publish_with_retry() {
   local dir="$1"
   local pkg="$2"
-  local otp=""
   local output=""
   local status=0
+  local auth_retry_done=0
 
   while true; do
     set +e
-    if [[ -n "$otp" ]]; then
-      output="$(cd "$dir" && npm publish --access public --otp "$otp" 2>&1)"
-    else
-      output="$(cd "$dir" && npm publish --access public 2>&1)"
-    fi
+    output="$(cd "$dir" && npm publish --access public 2>&1)"
     status=$?
     set -e
     echo "$output"
@@ -98,15 +94,23 @@ npm_publish_with_retry() {
     fi
 
     if grep -q "code EOTP" <<<"$output"; then
-      read -r -p "Enter npm OTP for $pkg: " otp
-      continue
+      if [[ $auth_retry_done -eq 0 ]]; then
+        echo "npm publish requires extra auth; retrying after browser login..."
+        open_url "https://www.npmjs.com/login"
+        npm login --auth-type=web
+        auth_retry_done=1
+        continue
+      fi
+      echo "npm publish for $pkg still requires one-time password (write 2FA)."
+      echo "Browser auth cannot bypass publish OTP for write-protected accounts."
+      echo "Use an npm automation token (NPM_TOKEN) or change npm 2FA policy, then rerun."
+      return 1
     fi
 
     if grep -qiE "E401|access token expired|revoked|Unauthorized" <<<"$output"; then
       echo "Refreshing npm auth..."
       open_url "https://www.npmjs.com/login"
       npm login --auth-type=web
-      otp=""
       continue
     fi
 
