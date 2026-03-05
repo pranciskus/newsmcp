@@ -89,14 +89,40 @@ jobs:
         working-directory: packages/mcp-server
         env:
           NODE_AUTH_TOKEN: ""
-        run: npm publish --access public
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(npm publish --access public 2>&1)" || status=$?
+          status="${status:-0}"
+          echo "$output"
+          if [[ "$status" -eq 0 ]]; then
+            exit 0
+          fi
+          if grep -qi "previously published versions" <<<"$output"; then
+            echo "Version already published; continuing."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Publish @newsmcp/openclaw to npm (Trusted Publishing)
         if: steps.version_check.outputs.openclaw_exists != 'true'
         working-directory: packages/openclaw-plugin
         env:
           NODE_AUTH_TOKEN: ""
-        run: npm publish --access public
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(npm publish --access public 2>&1)" || status=$?
+          status="${status:-0}"
+          echo "$output"
+          if [[ "$status" -eq 0 ]]; then
+            exit 0
+          fi
+          if grep -qi "previously published versions" <<<"$output"; then
+            echo "Version already published; continuing."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Install mcp-publisher
         shell: bash
@@ -127,9 +153,19 @@ jobs:
 
       - name: Publish MCP metadata (GitHub OIDC)
         working-directory: packages/mcp-server
+        shell: bash
         run: |
+          set -euo pipefail
           mcp-publisher login github-oidc
-          mcp-publisher publish server.json
+          for attempt in $(seq 1 20); do
+            if mcp-publisher publish server.json; then
+              exit 0
+            fi
+            echo "MCP publish attempt $attempt failed (likely npm replication delay). Retrying in 30s..."
+            sleep 30
+          done
+          echo "MCP publish failed after retries."
+          exit 1
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
