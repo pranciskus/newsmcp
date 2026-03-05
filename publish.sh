@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Publish newsmcp packages to npm + MCP Registry and create a GitHub release.
+# Prepare and push a release tag that triggers .github/workflows/release.yml.
 # Usage: ./publish.sh [patch|minor|major]
-# Auth options:
-#   - Preferred: export NPM_TOKEN=<npm automation token>
-#   - Fallback: browser login (may still require OTP depending on npm 2FA policy)
+# Optional: SKIP_CHECKS=1 ./publish.sh patch
 
 BUMP="${1:-patch}"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -13,7 +11,6 @@ SERVER_DIR="$ROOT/packages/mcp-server"
 OPENCLAW_DIR="$ROOT/packages/openclaw-plugin"
 SERVER_JSON="$SERVER_DIR/server.json"
 BRANCH="$(git -C "$ROOT" branch --show-current)"
-TMP_NPMRC=""
 
 if [[ ! "$BUMP" =~ ^(patch|minor|major)$ ]]; then
   echo "Usage: ./publish.sh [patch|minor|major]"
@@ -27,38 +24,6 @@ require_cmd() {
   fi
 }
 
-cleanup() {
-  if [[ -n "$TMP_NPMRC" && -f "$TMP_NPMRC" ]]; then
-    rm -f "$TMP_NPMRC"
-  fi
-}
-trap cleanup EXIT
-
-open_url() {
-  local url="$1"
-  if command -v open >/dev/null 2>&1; then
-    open "$url" >/dev/null 2>&1 || true
-  elif command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "$url" >/dev/null 2>&1 || true
-  fi
-}
-
-find_mcp_publisher() {
-  if [[ -x "$ROOT/mcp-publisher" ]]; then
-    echo "$ROOT/mcp-publisher"
-    return 0
-  fi
-  if command -v mcp-publisher >/dev/null 2>&1; then
-    command -v mcp-publisher
-    return 0
-  fi
-  if [[ -x "$HOME/.local/bin/mcp-publisher" ]]; then
-    echo "$HOME/.local/bin/mcp-publisher"
-    return 0
-  fi
-  return 1
-}
-
 ensure_clean_worktree() {
   if [[ -n "$(git -C "$ROOT" status --porcelain)" ]]; then
     echo "Working tree is not clean. Commit/stash changes before publishing."
@@ -67,91 +32,23 @@ ensure_clean_worktree() {
   fi
 }
 
-configure_npm_auth() {
-  if [[ -n "${NPM_TOKEN:-}" ]]; then
-    TMP_NPMRC="$(mktemp)"
-    printf "//registry.npmjs.org/:_authToken=%s\n" "$NPM_TOKEN" >"$TMP_NPMRC"
-    export NPM_CONFIG_USERCONFIG="$TMP_NPMRC"
-    echo "Using NPM_TOKEN for npm auth."
-  fi
-}
-
-ensure_npm_auth() {
-  if [[ -n "${NPM_TOKEN:-}" ]]; then
-    if npm whoami >/dev/null 2>&1; then
-      return 0
-    fi
-    echo "NPM_TOKEN is set but npm auth failed."
-    echo "Check token validity/scope and ensure it is an Automation token."
+ensure_branch() {
+  if [[ -z "$BRANCH" ]]; then
+    echo "Detached HEAD is not supported for releases."
     exit 1
   fi
-  if npm whoami >/dev/null 2>&1; then
-    return 0
-  fi
-  echo "npm auth required. Opening browser for login..."
-  open_url "https://www.npmjs.com/login"
-  npm login --auth-type=web
-  npm whoami >/dev/null
 }
 
-ensure_gh_auth() {
-  if gh auth status -h github.com >/dev/null 2>&1; then
-    return 0
+ensure_remote_tag_absent() {
+  local tag="$1"
+  if git -C "$ROOT" rev-parse "$tag" >/dev/null 2>&1; then
+    echo "Tag $tag already exists locally."
+    exit 1
   fi
-  echo "GitHub CLI auth required. Opening browser for login..."
-  open_url "https://github.com/login"
-  gh auth login -h github.com --web -s repo
-}
-
-npm_publish_with_retry() {
-  local dir="$1"
-  local pkg="$2"
-  local output=""
-  local status=0
-  local auth_retry_done=0
-
-  while true; do
-    set +e
-    output="$(cd "$dir" && npm publish --access public 2>&1)"
-    status=$?
-    set -e
-    echo "$output"
-
-    if [[ $status -eq 0 ]]; then
-      return 0
-    fi
-
-    if grep -q "code EOTP" <<<"$output"; then
-      if [[ -n "${NPM_TOKEN:-}" ]]; then
-        echo "npm publish for $pkg still requires OTP while using NPM_TOKEN."
-        echo "Your token is likely not an Automation token."
-        echo "Create an Automation token and export NPM_TOKEN, then rerun."
-        return 1
-      fi
-      if [[ $auth_retry_done -eq 0 ]]; then
-        echo "npm publish requires extra auth; retrying after browser login..."
-        open_url "https://www.npmjs.com/login"
-        npm login --auth-type=web
-        auth_retry_done=1
-        continue
-      fi
-      echo "npm publish for $pkg still requires one-time password (write 2FA)."
-      echo "Browser auth cannot bypass publish OTP for write-protected accounts."
-      echo "Open https://www.npmjs.com/settings/<user>/tokens and create an Automation token,"
-      echo "then rerun with: export NPM_TOKEN='<token>'"
-      return 1
-    fi
-
-    if grep -qiE "E401|access token expired|revoked|Unauthorized" <<<"$output"; then
-      echo "Refreshing npm auth..."
-      open_url "https://www.npmjs.com/login"
-      npm login --auth-type=web
-      continue
-    fi
-
-    echo "npm publish failed for $pkg."
-    return $status
-  done
+  if git -C "$ROOT" ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+    echo "Tag $tag already exists on origin."
+    exit 1
+  fi
 }
 
 update_server_json_version() {
@@ -173,37 +70,19 @@ fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
 NODE
 }
 
-mcp_publish_with_retry() {
-  local publisher="$1"
-  local output=""
-  local status=0
-
-  while true; do
-    set +e
-    output="$(cd "$SERVER_DIR" && "$publisher" publish 2>&1)"
-    status=$?
-    set -e
-    echo "$output"
-
-    if [[ $status -eq 0 ]]; then
-      return 0
-    fi
-
-    if grep -qiE "401|unauthorized|expired|invalid.*token|not authenticated" <<<"$output"; then
-      echo "Refreshing MCP Registry auth..."
-      open_url "https://github.com/login/device"
-      (cd "$SERVER_DIR" && "$publisher" login github)
-      continue
-    fi
-
-    echo "MCP Registry publish failed."
-    return $status
-  done
+github_repo_slug() {
+  local remote
+  remote="$(git -C "$ROOT" config --get remote.origin.url || true)"
+  if [[ "$remote" =~ github\.com[:/]([^/]+/[^/.]+)(\.git)?$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+  fi
 }
 
-create_git_commit_tag_and_release() {
+commit_tag_and_push() {
   local version="$1"
   local tag="v$version"
+
+  ensure_remote_tag_absent "$tag"
 
   git -C "$ROOT" add \
     package-lock.json \
@@ -211,66 +90,45 @@ create_git_commit_tag_and_release() {
     packages/openclaw-plugin/package.json \
     packages/mcp-server/server.json
   git -C "$ROOT" commit -m "Release $tag"
-
-  if git -C "$ROOT" rev-parse "$tag" >/dev/null 2>&1; then
-    echo "Tag $tag already exists, skipping tag creation."
-  else
-    git -C "$ROOT" tag -a "$tag" -m "$tag"
-  fi
-
+  git -C "$ROOT" tag -a "$tag" -m "$tag"
   git -C "$ROOT" push origin "$BRANCH"
   git -C "$ROOT" push origin "$tag"
-
-  if gh release view "$tag" >/dev/null 2>&1; then
-    echo "GitHub release $tag already exists, skipping."
-  else
-    gh release create "$tag" --title "$tag" --generate-notes
-  fi
 }
 
 require_cmd git
 require_cmd npm
 require_cmd node
-require_cmd gh
-MCP_PUBLISHER="$(find_mcp_publisher || true)"
-if [[ -z "$MCP_PUBLISHER" ]]; then
-  echo "Could not find mcp-publisher binary."
-  echo "Expected one of: ./mcp-publisher, mcp-publisher in PATH, ~/.local/bin/mcp-publisher"
-  exit 1
-fi
-
-configure_npm_auth
+ensure_branch
 ensure_clean_worktree
-ensure_npm_auth
-ensure_gh_auth
 
-echo "=== Building ==="
-(cd "$SERVER_DIR" && npm run build)
-(cd "$OPENCLAW_DIR" && npm run typecheck)
-
-echo ""
-echo "=== Publishing @newsmcp/server to npm ==="
+echo "=== Bumping versions ==="
 (cd "$SERVER_DIR" && npm version "$BUMP" --no-git-tag-version)
 VERSION="$(node -p "require('$SERVER_DIR/package.json').version")"
-npm_publish_with_retry "$SERVER_DIR" "@newsmcp/server"
-echo "Published @newsmcp/server@$VERSION"
-
-echo ""
-echo "=== Publishing @newsmcp/openclaw to npm ==="
 (cd "$OPENCLAW_DIR" && npm version "$VERSION" --no-git-tag-version --allow-same-version)
-npm_publish_with_retry "$OPENCLAW_DIR" "@newsmcp/openclaw"
-echo "Published @newsmcp/openclaw@$VERSION"
-
-echo ""
-echo "=== Publishing to MCP Registry ==="
 update_server_json_version "$VERSION"
-mcp_publish_with_retry "$MCP_PUBLISHER"
-echo "Published to MCP Registry"
 
 echo ""
-echo "=== Creating commit, tag, push, and GitHub release ==="
-create_git_commit_tag_and_release "$VERSION"
+echo "=== Updating lockfile ==="
+(cd "$ROOT" && npm install --package-lock-only)
+
+if [[ "${SKIP_CHECKS:-0}" != "1" ]]; then
+  echo ""
+  echo "=== Running checks ==="
+  (cd "$SERVER_DIR" && npm run build)
+  (cd "$OPENCLAW_DIR" && npm run typecheck)
+fi
+
+echo ""
+echo "=== Committing and pushing release tag ==="
+commit_tag_and_push "$VERSION"
 
 echo ""
 echo "=== Done ==="
-echo "Published version $VERSION to npm + MCP Registry and created GitHub release."
+echo "Pushed release commit and tag v$VERSION."
+echo "GitHub Actions release workflow should start automatically."
+
+REPO_SLUG="$(github_repo_slug || true)"
+if [[ -n "$REPO_SLUG" ]]; then
+  echo "Watch run: https://github.com/$REPO_SLUG/actions/workflows/release.yml"
+  echo "Tag page:  https://github.com/$REPO_SLUG/releases/tag/v$VERSION"
+fi
