@@ -33,6 +33,9 @@ Free. No API key. One command to install.
 | [Claude Code MCP](#claude-code-mcp) | `@newsmcp/server` | `claude mcp add` |
 | [Cursor](#cursor) | `@newsmcp/server` | MCP config |
 | [Windsurf](#windsurf) | `@newsmcp/server` | MCP config |
+| [OpenAI Codex](#openai-codex) | `@newsmcp/server` | `codex mcp add` |
+| [Gemini CLI](#gemini-cli) | `@newsmcp/server` | `settings.json` |
+| [OpenCode](#opencode) | `@newsmcp/server` | `opencode mcp add` |
 | [Smithery](#smithery) | `@newsmcp/server` | `npx @smithery/cli` |
 | [OpenClaw plugin](#openclaw-plugin) | `@newsmcp/openclaw` | `openclaw plugins install` |
 | [OpenClaw skill](#openclaw-skill) | `newsmcp-skill` | `clawhub install` |
@@ -91,6 +94,55 @@ Add to MCP config:
     "newsmcp": {
       "command": "npx",
       "args": ["-y", "@newsmcp/server"]
+    }
+  }
+}
+```
+
+### OpenAI Codex
+
+```bash
+codex mcp add newsmcp -- npx -y @newsmcp/server
+```
+
+Or add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.newsmcp]
+command = "npx"
+args = ["-y", "@newsmcp/server"]
+```
+
+### Gemini CLI
+
+Add to `~/.gemini/settings.json` (or project-local `.gemini/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "newsmcp": {
+      "command": "npx",
+      "args": ["-y", "@newsmcp/server"]
+    }
+  }
+}
+```
+
+### OpenCode
+
+```bash
+opencode mcp add
+```
+
+Or add to `~/.config/opencode/opencode.json` (or project-local `.opencode/opencode.json`):
+
+```json
+{
+  "mcp": {
+    "newsmcp": {
+      "type": "local",
+      "enabled": true,
+      "command": ["npx", "-y", "@newsmcp/server"]
     }
   }
 }
