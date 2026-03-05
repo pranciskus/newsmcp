@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: Validate versions match tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          SERVER_VERSION="$(node -p "require('./packages/mcp-server/package.json').version")"
+          OPENCLAW_VERSION="$(node -p "require('./packages/openclaw-plugin/package.json').version")"
+          SERVER_JSON_VERSION="$(node -p "require('./packages/mcp-server/server.json').version")"
+
+          echo "Tag version: $VERSION"
+          echo "Server version: $SERVER_VERSION"
+          echo "OpenClaw version: $OPENCLAW_VERSION"
+          echo "server.json version: $SERVER_JSON_VERSION"
+
+          if [[ "$SERVER_VERSION" != "$VERSION" ]]; then
+            echo "packages/mcp-server/package.json version does not match tag."
+            exit 1
+          fi
+          if [[ "$OPENCLAW_VERSION" != "$VERSION" ]]; then
+            echo "packages/openclaw-plugin/package.json version does not match tag."
+            exit 1
+          fi
+          if [[ "$SERVER_JSON_VERSION" != "$VERSION" ]]; then
+            echo "packages/mcp-server/server.json version does not match tag."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and typecheck
+        run: |
+          npm -w packages/mcp-server run build
+          npm -w packages/openclaw-plugin run typecheck
+
+      - name: Verify versions are not already on npm
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          if npm view "@newsmcp/server@$VERSION" version >/dev/null 2>&1; then
+            echo "@newsmcp/server@$VERSION already exists on npm."
+            exit 1
+          fi
+          if npm view "@newsmcp/openclaw@$VERSION" version >/dev/null 2>&1; then
+            echo "@newsmcp/openclaw@$VERSION already exists on npm."
+            exit 1
+          fi
+
+      - name: Publish @newsmcp/server to npm (Trusted Publishing)
+        working-directory: packages/mcp-server
+        run: npm publish --access public --provenance
+
+      - name: Publish @newsmcp/openclaw to npm (Trusted Publishing)
+        working-directory: packages/openclaw-plugin
+        run: npm publish --access public --provenance
+
+      - name: Install mcp-publisher
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(curl -fsSL https://api.github.com/repos/modelcontextprotocol/registry/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')"
+          OS="linux"
+          ARCH="$(uname -m)"
+          case "$ARCH" in
+            x86_64|amd64) ARCH="amd64" ;;
+            aarch64|arm64) ARCH="arm64" ;;
+            *)
+              echo "Unsupported architecture: $ARCH"
+              exit 1
+              ;;
+          esac
+          TARBALL="mcp-publisher_${VERSION}_${OS}_${ARCH}.tar.gz"
+          URL="https://github.com/modelcontextprotocol/registry/releases/download/v${VERSION}/${TARBALL}"
+
+          curl -fsSL "$URL" -o /tmp/mcp-publisher.tar.gz
+          tar -xzf /tmp/mcp-publisher.tar.gz -C /tmp mcp-publisher
+          chmod +x /tmp/mcp-publisher
+          mkdir -p "$HOME/.local/bin"
+          mv /tmp/mcp-publisher "$HOME/.local/bin/mcp-publisher"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Publish MCP metadata (GitHub OIDC)
+        working-directory: packages/mcp-server
+        run: |
+          mcp-publisher login github-oidc
+          mcp-publisher publish server.json
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true

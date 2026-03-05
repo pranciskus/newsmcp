@@ -310,10 +310,48 @@ Point to a different API backend:
 }
 ```
 
+## Releases (GitHub Actions + OIDC)
+
+Publishing is tag-driven via [`.github/workflows/release.yml`](.github/workflows/release.yml):
+
+- Trigger: push tag `v*.*.*`
+- Publishes `@newsmcp/server` and `@newsmcp/openclaw` to npm via Trusted Publishing (OIDC)
+- Publishes MCP metadata with `mcp-publisher login github-oidc`
+- Creates a GitHub release with generated notes
+
+### One-time setup
+
+1. npm package settings:
+   For `@newsmcp/server` and `@newsmcp/openclaw`, add a Trusted Publisher pointing to:
+   - Owner: `pranciskus`
+   - Repository: `newsmcp`
+   - Workflow file: `.github/workflows/release.yml`
+   - Environment: leave empty (unless you intentionally use one)
+2. MCP Registry:
+   Ensure the repo/package is authorized for GitHub OIDC publishing in MCP Registry.
+
+### Release flow
+
+1. Bump versions in:
+   - `packages/mcp-server/package.json`
+   - `packages/openclaw-plugin/package.json`
+   - `packages/mcp-server/server.json`
+   - `package-lock.json`
+2. Commit and push to `main`
+3. Create and push tag:
+
+```bash
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+The workflow does the publish and GitHub release automatically.
+
 ## Repository structure
 
 ```
 newsmcp/
+├── .github/workflows/       # CI/CD workflows (release automation)
 ├── .claude-plugin/          # Marketplace manifest
 ├── packages/
 │   ├── mcp-server/          # @newsmcp/server — MCP server (npm)
