@@ -91,7 +91,26 @@ wait_for_npm_version() {
 login_mcp() {
   echo "Authenticating mcp-publisher with GitHub..."
   open_url "https://github.com/login/device"
-  (cd "$SERVER_DIR" && "$MCP_PUBLISHER" login github)
+  local login_log status device_code
+  login_log="$(mktemp)"
+
+  set +e
+  (cd "$SERVER_DIR" && "$MCP_PUBLISHER" login github) 2>&1 | tee "$login_log"
+  status=${PIPESTATUS[0]}
+  set -e
+
+  device_code="$(grep -Eo 'Enter code:[[:space:]]*[A-Z0-9-]+' "$login_log" | tail -n1 | sed -E 's/.*Enter code:[[:space:]]*//')"
+  rm -f "$login_log"
+
+  if [[ -n "$device_code" ]]; then
+    echo "GitHub device code: $device_code"
+  else
+    echo "Device code not detected in output."
+    echo "If login is waiting, run this manually in a new terminal:"
+    echo "  cd \"$SERVER_DIR\" && \"$MCP_PUBLISHER\" login github"
+  fi
+
+  return "$status"
 }
 
 publish_mcp() {
