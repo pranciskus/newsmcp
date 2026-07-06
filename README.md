@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/pranciskus-newsmcp-badge.png)](https://mseep.ai/app/pranciskus-newsmcp)
+
 <h1 align="center">NewsMCP — World news for AI agents</h1>
 
 <p align="center">
